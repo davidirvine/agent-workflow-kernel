@@ -144,3 +144,4 @@ When addressing comments left by a human reviewer on the feature PR:
 ## Project-specific rules
 
 @./STACK.md
+@./WORKFLOW-NOTES.md
