@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-format:
+    name: lint / format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # shfmt is not preinstalled on ubuntu-latest (shellcheck is). Pin the
+      # exact version that scripts/checks.sh and slice 4's setup.sh expect —
+      # different shfmt versions can format differently, so the pin keeps CI
+      # and local formatting deterministic.
+      - name: Install shfmt v3.8.0
+        run: |
+          curl -fsSL -o shfmt https://github.com/mvdan/sh/releases/download/v3.8.0/shfmt_v3.8.0_linux_amd64
+          chmod +x shfmt
+          sudo mv shfmt /usr/local/bin/shfmt
+          shfmt --version
+
+      - run: npm ci
+
+      - name: Run shared checks (parity with pre-push)
+        run: scripts/checks.sh
