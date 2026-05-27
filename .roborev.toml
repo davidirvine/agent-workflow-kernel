@@ -1,0 +1,3 @@
+agent = "claude-code"
+post_commit_review = "commit"
+auto_close_passing_reviews = true

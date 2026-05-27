@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Vite build output
+dist/
+.vite/
+
+# FAUST compiled artifacts (regenerate with: npm run faust:build)
+public/synth.wasm
+public/synth.js
+public/synth.json
+public/dsp-module.wasm
+public/dsp-meta.json
+public/index.html
+public/index.js
+public/create-node.js
+public/faustwasm/
+
+# Test output
+coverage/
+.nyc_output/
+
+# Stryker mutation testing
+reports/
+.stryker-tmp/
+
+# Playwright
+test-results/
+playwright-report/
+.playwright/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Claude Code runtime
+.claude/*.lock
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
