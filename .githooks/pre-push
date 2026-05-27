@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+# pre-push: run the repo-wide checks (CI parity) and block the push on failure.
+# It invokes the SAME scripts/checks.sh that CI runs, so "pre-push CI parity"
+# is literal identity rather than two hand-synced copies that can drift (D3).
+set -eu
+
+# Resolve the repo root so the hook works from any worktree / subdirectory.
+root=$(git rev-parse --show-toplevel)
+
+exec "$root/scripts/checks.sh"
