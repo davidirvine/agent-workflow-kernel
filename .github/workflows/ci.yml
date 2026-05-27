@@ -31,3 +31,12 @@ jobs:
 
       - name: Run shared checks (parity with pre-push)
         run: scripts/checks.sh
+
+  # Pending stub (D4): present and green from day one so the harness slot
+  # exists in every CI run. Slices 3-5 fill in real pipeline stages by
+  # editing this one job rather than adding new ones.
+  smoke-app:
+    name: smoke-app
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "smoke-app: pending until slice 5"'
