@@ -51,7 +51,7 @@ if git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
   git branch -D "$BRANCH"
 fi
 
-if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
+if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
   git push origin --delete "$BRANCH"
 fi
 
