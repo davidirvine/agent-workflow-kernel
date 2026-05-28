@@ -8,13 +8,33 @@ import {
   synthParams,
   PARAM_DEFAULTS,
 } from '../state/synth.svelte.js'
-import { savePatch, listPatches } from '../patches/storage.js'
+import { createPatchStorage } from '../patches/storage.js'
+
+// PatchControl now takes a `storage` prop (D4 constructor injection). These
+// tests construct a `test:`-namespaced storage in beforeEach and route every
+// render through renderControl(). The savePatch/listPatches/loadPatch aliases
+// below preserve the pre-refactor call sites unchanged.
+const TEST_NAMESPACE = 'test:'
+/** @type {ReturnType<typeof createPatchStorage>} */
+let storage
+let savePatch
+let listPatches
+let loadPatch
 
 beforeEach(() => {
   localStorage.clear()
   resetParams()
   setActivePatch(null, PARAM_DEFAULTS)
+  storage = createPatchStorage(TEST_NAMESPACE)
+  savePatch = storage.savePatch
+  listPatches = storage.listPatches
+  loadPatch = storage.loadPatch
 })
+
+/** @param {Record<string, unknown>} [extraProps] */
+function renderControl(extraProps = {}) {
+  return render(PatchControl, { props: { storage, ...extraProps } })
+}
 
 /** @param {HTMLElement} container */
 function openPopover(container) {
@@ -29,14 +49,14 @@ async function typeName(container, value) {
 
 describe('PatchControl — trigger and empty state', () => {
   it('shows the active patch name (DEFAULT when none loaded)', () => {
-    const { container } = render(PatchControl)
+    const { container } = renderControl()
     expect(/** @type {Element} */ (container.querySelector('.patch-name')).textContent).toBe(
       'DEFAULT'
     )
   })
 
   it('disables the name field and SAVE while powered off, enables them when on', async () => {
-    const off = render(PatchControl, { props: { powered: false } })
+    const off = renderControl({ powered: false })
     await openPopover(off.container)
     expect(
       /** @type {HTMLInputElement} */ (off.container.querySelector('.name-input')).disabled
@@ -45,7 +65,7 @@ describe('PatchControl — trigger and empty state', () => {
       /** @type {HTMLButtonElement} */ (off.container.querySelector('.save-btn')).disabled
     ).toBe(true)
 
-    const on = render(PatchControl, { props: { powered: true } })
+    const on = renderControl({ powered: true })
     await openPopover(on.container)
     expect(
       /** @type {HTMLInputElement} */ (on.container.querySelector('.name-input')).disabled
@@ -56,18 +76,18 @@ describe('PatchControl — trigger and empty state', () => {
   })
 
   it('shows an empty-state message when no patches exist', async () => {
-    const { container, getByText } = render(PatchControl)
+    const { container, getByText } = renderControl()
     await openPopover(container)
     expect(getByText('no patches saved yet')).toBeTruthy()
   })
 
   it('does not render the popover until the trigger is clicked', () => {
-    const { container } = render(PatchControl)
+    const { container } = renderControl()
     expect(container.querySelector('.popover')).toBeNull()
   })
 
   it('closes the popover on a press outside the control', async () => {
-    const { container } = render(PatchControl)
+    const { container } = renderControl()
     await openPopover(container)
     expect(container.querySelector('.popover')).not.toBeNull()
     await fireEvent.pointerDown(document.body)
@@ -76,7 +96,7 @@ describe('PatchControl — trigger and empty state', () => {
 
   it('a press inside the popover (on a self-removing control) does not close it', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
-    const { container } = render(PatchControl)
+    const { container } = renderControl()
     await openPopover(container)
     // Starting a rename swaps the row out for an input; the popover must stay open.
     await fireEvent.click(
@@ -87,7 +107,7 @@ describe('PatchControl — trigger and empty state', () => {
   })
 
   it('closes the popover on Escape', async () => {
-    const { container } = render(PatchControl)
+    const { container } = renderControl()
     await openPopover(container)
     expect(container.querySelector('.popover')).not.toBeNull()
     await fireEvent.keyDown(window, { key: 'Escape' })
@@ -97,7 +117,7 @@ describe('PatchControl — trigger and empty state', () => {
 
 describe('PatchControl — save', () => {
   it('saves a new patch from the current state', async () => {
-    const { container } = render(PatchControl)
+    const { container } = renderControl()
     await openPopover(container)
     await typeName(container, 'LEAD')
     await fireEvent.click(/** @type {Element} */ (container.querySelector('.save-btn')))
@@ -105,7 +125,7 @@ describe('PatchControl — save', () => {
   })
 
   it('normalizes the name field to the trimmed name after a successful save', async () => {
-    const { container } = render(PatchControl)
+    const { container } = renderControl()
     await openPopover(container)
     await typeName(container, '  PAD  ')
     await fireEvent.click(/** @type {Element} */ (container.querySelector('.save-btn')))
@@ -116,7 +136,7 @@ describe('PatchControl — save', () => {
   })
 
   it('Enter in the name field triggers save', async () => {
-    const { container } = render(PatchControl)
+    const { container } = renderControl()
     await openPopover(container)
     const input = /** @type {Element} */ (container.querySelector('.name-input'))
     await fireEvent.input(input, { target: { value: 'LEAD' } })
@@ -125,7 +145,7 @@ describe('PatchControl — save', () => {
   })
 
   it('an empty name shows "name required" and saves nothing', async () => {
-    const { container, getByText } = render(PatchControl)
+    const { container, getByText } = renderControl()
     await openPopover(container)
     await typeName(container, '   ')
     await fireEvent.click(/** @type {Element} */ (container.querySelector('.save-btn')))
@@ -135,7 +155,7 @@ describe('PatchControl — save', () => {
 
   it('saving over an existing name requires inline confirmation', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
-    const { container, getByText, getByLabelText } = render(PatchControl)
+    const { container, getByText, getByLabelText } = renderControl()
     await openPopover(container)
     await typeName(container, 'LEAD')
     await fireEvent.click(/** @type {Element} */ (container.querySelector('.save-btn')))
@@ -147,27 +167,26 @@ describe('PatchControl — save', () => {
   })
 
   it('canceling the overwrite confirm does not write', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, cutoff: 1111 })
-    const { container, getByLabelText } = render(PatchControl)
+    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 1111 })
+    const { container, getByLabelText } = renderControl()
     // Change the live state so a save would differ from the stored slot.
-    writeParam('cutoff', 9999)
+    writeParam('frequency', 9999)
     await openPopover(container)
     await typeName(container, 'LEAD')
     await fireEvent.click(/** @type {Element} */ (container.querySelector('.save-btn')))
     await fireEvent.click(getByLabelText('cancel overwrite'))
-    const { loadPatch } = await import('../patches/storage.js')
-    expect(loadPatch('LEAD')?.params.cutoff).toBe(1111)
+    expect(loadPatch('LEAD')?.params.frequency).toBe(1111)
   })
 })
 
 describe('PatchControl — update in place', () => {
   it('saving the active patch by its own name updates it with no overwrite confirm', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, cutoff: 1000 })
-    const { container, getByText } = render(PatchControl)
+    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 1000 })
+    const { container, getByText } = renderControl()
     // Load it so it becomes the active patch (popover stays open), then tweak.
     await openPopover(container)
     await fireEvent.click(getByText('LEAD'))
-    writeParam('cutoff', 5000)
+    writeParam('frequency', 5000)
     await Promise.resolve()
     expect(container.querySelector('.dirty')).not.toBeNull()
 
@@ -175,8 +194,7 @@ describe('PatchControl — update in place', () => {
     await fireEvent.click(/** @type {Element} */ (container.querySelector('.save-btn')))
     // No overwrite confirmation was shown.
     expect(container.querySelector('.confirm')).toBeNull()
-    const { loadPatch } = await import('../patches/storage.js')
-    expect(loadPatch('LEAD')?.params.cutoff).toBe(5000)
+    expect(loadPatch('LEAD')?.params.frequency).toBe(5000)
     expect(listPatches()).toEqual(['LEAD'])
     await Promise.resolve()
     expect(container.querySelector('.dirty')).toBeNull()
@@ -185,8 +203,8 @@ describe('PatchControl — update in place', () => {
 
 describe('PatchControl — rename', () => {
   it('renames a patch to a new name', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, cutoff: 8000 })
-    const { container } = render(PatchControl)
+    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 8000 })
+    const { container } = renderControl()
     await openPopover(container)
     await fireEvent.click(
       /** @type {Element} */ (container.querySelector('[aria-label="rename LEAD"]'))
@@ -202,7 +220,7 @@ describe('PatchControl — rename', () => {
 
   it('Enter in the rename field confirms the rename', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
-    const { container } = render(PatchControl)
+    const { container } = renderControl()
     await openPopover(container)
     await fireEvent.click(
       /** @type {Element} */ (container.querySelector('[aria-label="rename LEAD"]'))
@@ -214,9 +232,9 @@ describe('PatchControl — rename', () => {
   })
 
   it('renaming onto a different existing name requires an inline confirm', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, cutoff: 8000 })
-    savePatch('PAD', { ...PARAM_DEFAULTS, cutoff: 1000 })
-    const { container, getByText } = render(PatchControl)
+    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 8000 })
+    savePatch('PAD', { ...PARAM_DEFAULTS, frequency: 1000 })
+    const { container, getByText } = renderControl()
     await openPopover(container)
     await fireEvent.click(
       /** @type {Element} */ (container.querySelector('[aria-label="rename LEAD"]'))
@@ -238,7 +256,7 @@ describe('PatchControl — rename', () => {
 
   it('an empty rename shows "name required" and changes nothing', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
-    const { container, getByText } = render(PatchControl)
+    const { container, getByText } = renderControl()
     await openPopover(container)
     await fireEvent.click(
       /** @type {Element} */ (container.querySelector('[aria-label="rename LEAD"]'))
@@ -255,7 +273,7 @@ describe('PatchControl — rename', () => {
 
   it('canceling a rename leaves the patch unchanged', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
-    const { container } = render(PatchControl)
+    const { container } = renderControl()
     await openPopover(container)
     await fireEvent.click(
       /** @type {Element} */ (container.querySelector('[aria-label="rename LEAD"]'))
@@ -272,7 +290,7 @@ describe('PatchControl — rename', () => {
   it('loading a different patch closes a stale rename editor', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
     savePatch('PAD', PARAM_DEFAULTS)
-    const { container, getByText } = render(PatchControl)
+    const { container, getByText } = renderControl()
     await openPopover(container)
     // Start renaming LEAD, then load PAD instead.
     await fireEvent.click(
@@ -285,7 +303,7 @@ describe('PatchControl — rename', () => {
 
   it('renaming the active patch updates the trigger name', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
-    const { container, getByText } = render(PatchControl)
+    const { container, getByText } = renderControl()
     await openPopover(container)
     await fireEvent.click(getByText('LEAD')) // make active
     expect(/** @type {Element} */ (container.querySelector('.patch-name')).textContent).toBe('LEAD')
@@ -306,19 +324,19 @@ describe('PatchControl — rename', () => {
 
 describe('PatchControl — load', () => {
   it('loading a patch applies its params to the store and marks it active', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, cutoff: 8000, osc1Wave: 3 })
-    const { container, getByText } = render(PatchControl)
+    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 8000, waveform: 3 })
+    const { container, getByText } = renderControl()
     await openPopover(container)
     await fireEvent.click(getByText('LEAD'))
-    expect(synthParams.cutoff).toBe(8000)
-    expect(synthParams.osc1Wave).toBe(3)
+    expect(synthParams.frequency).toBe(8000)
+    expect(synthParams.waveform).toBe(3)
     expect(/** @type {Element} */ (container.querySelector('.patch-name')).textContent).toBe('LEAD')
   })
 
   it('the active patch is marked in the list', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
     savePatch('PAD', PARAM_DEFAULTS)
-    const { container, getByText } = render(PatchControl)
+    const { container, getByText } = renderControl()
     await openPopover(container)
     await fireEvent.click(getByText('PAD'))
     const rows = container.querySelectorAll('.patch-row')
@@ -332,7 +350,7 @@ describe('PatchControl — load', () => {
 describe('PatchControl — delete', () => {
   it('delete requires inline confirmation (never one click)', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
-    const { container, getByLabelText } = render(PatchControl)
+    const { container, getByLabelText } = renderControl()
     await openPopover(container)
     await fireEvent.click(getByLabelText('delete LEAD'))
     // Still present until confirmed.
@@ -344,7 +362,7 @@ describe('PatchControl — delete', () => {
   it('removes the deleted row from the list without reopening', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
     savePatch('PAD', PARAM_DEFAULTS)
-    const { container, getByLabelText } = render(PatchControl)
+    const { container, getByLabelText } = renderControl()
     await openPopover(container)
     expect(container.querySelectorAll('.patch-row').length).toBe(2)
     await fireEvent.click(getByLabelText('delete LEAD'))
@@ -359,7 +377,7 @@ describe('PatchControl — delete', () => {
 
   it('canceling delete leaves the patch intact', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
-    const { container, getByLabelText } = render(PatchControl)
+    const { container, getByLabelText } = renderControl()
     await openPopover(container)
     await fireEvent.click(getByLabelText('delete LEAD'))
     await fireEvent.click(getByLabelText('cancel delete'))
@@ -368,7 +386,7 @@ describe('PatchControl — delete', () => {
 
   it('deleting the active patch clears its name from the trigger', async () => {
     savePatch('LEAD', PARAM_DEFAULTS)
-    const { container, getByText, getByLabelText } = render(PatchControl)
+    const { container, getByText, getByLabelText } = renderControl()
     await openPopover(container)
     await fireEvent.click(getByText('LEAD'))
     expect(/** @type {Element} */ (container.querySelector('.patch-name')).textContent).toBe('LEAD')
@@ -382,20 +400,20 @@ describe('PatchControl — delete', () => {
 
 describe('PatchControl — dirty marker', () => {
   it('no dirty marker when state matches the active patch', () => {
-    const { container } = render(PatchControl)
+    const { container } = renderControl()
     expect(container.querySelector('.dirty')).toBeNull()
   })
 
   it('shows the dirty marker after an in-scope param changes', async () => {
-    const { container } = render(PatchControl)
-    writeParam('cutoff', 5000)
+    const { container } = renderControl()
+    writeParam('frequency', 5000)
     await Promise.resolve()
     expect(container.querySelector('.dirty')).not.toBeNull()
   })
 
   it('saving clears the dirty marker', async () => {
-    const { container } = render(PatchControl)
-    writeParam('cutoff', 5000)
+    const { container } = renderControl()
+    writeParam('frequency', 5000)
     await openPopover(container)
     await typeName(container, 'LEAD')
     await fireEvent.click(/** @type {Element} */ (container.querySelector('.save-btn')))
@@ -404,9 +422,9 @@ describe('PatchControl — dirty marker', () => {
   })
 
   it('loading clears the dirty marker', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, cutoff: 8000 })
-    const { container, getByText } = render(PatchControl)
-    writeParam('cutoff', 5000)
+    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 8000 })
+    const { container, getByText } = renderControl()
+    writeParam('frequency', 5000)
     await openPopover(container)
     await fireEvent.click(getByText('LEAD'))
     await Promise.resolve()
@@ -416,12 +434,12 @@ describe('PatchControl — dirty marker', () => {
   it('loading a PARTIAL patch (missing keys) is not falsely dirty', async () => {
     // A patch from before a param existed (or with non-finite values dropped):
     // savePatch stores only the provided in-scope keys, so the slot is PARTIAL.
-    savePatch('OLD', { cutoff: 8000 })
-    const { container, getByText } = render(PatchControl)
+    savePatch('OLD', { frequency: 8000 })
+    const { container, getByText } = renderControl()
     await openPopover(container)
     await fireEvent.click(getByText('OLD'))
     await Promise.resolve()
-    expect(synthParams.cutoff).toBe(8000)
+    expect(synthParams.frequency).toBe(8000)
     // Missing params fell back to defaults, and the baseline has every key, so
     // there are no spurious unsaved-change markers.
     expect(container.querySelector('.dirty')).toBeNull()
@@ -433,7 +451,7 @@ describe('PatchControl — no OS dialogs', () => {
     savePatch('LEAD', PARAM_DEFAULTS)
     const promptSpy = vi.spyOn(window, 'prompt')
     const confirmSpy = vi.spyOn(window, 'confirm')
-    const { container, getByLabelText } = render(PatchControl)
+    const { container, getByLabelText } = renderControl()
     await openPopover(container)
     // overwrite flow
     await typeName(container, 'LEAD')
