@@ -1,10 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import {
-  createPatchStorage,
-  validateName,
-  PATCH_VERSION,
-  MAX_NAME_LENGTH,
-} from './storage.js'
+import { createPatchStorage, validateName, PATCH_VERSION, MAX_NAME_LENGTH } from './storage.js'
 import { PARAM_DEFAULTS } from '../state/synth.svelte.js'
 
 // The chassis carries no donor-identity literal in storage.js (D4): the

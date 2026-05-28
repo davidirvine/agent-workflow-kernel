@@ -213,7 +213,12 @@ export function createPatchStorage(namespace) {
 
     try {
       const env = JSON.parse(raw)
-      if (!env || typeof env !== 'object' || typeof env.params !== 'object' || env.params === null) {
+      if (
+        !env ||
+        typeof env !== 'object' ||
+        typeof env.params !== 'object' ||
+        env.params === null
+      ) {
         return null
       }
       /** @type {Record<string, number>} */
