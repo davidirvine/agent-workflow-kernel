@@ -358,7 +358,7 @@
       </svg>
     </a>
     <div class="title-block">
-      <span class="title">SYNTH-D</span>
+      <span class="title">__APP_TITLE__</span>
       <span class="version-label">{versionLabel}</span>
     </div>
     <div class="header-right">

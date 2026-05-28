@@ -82,6 +82,13 @@ VITE_BUILD_SENTINELS_RE='__APP_VERSION__|__GIT_BRANCH__'
 DONOR_LITERAL_RES=(
   'synth-d:'
   'davidirvine/synth-d'
+  # The donor app's branded title in upper case. The Shell's title slot is
+  # parameterized via the __APP_TITLE__ sentinel; this denylist catches any
+  # accidental hardcoding of the literal donor brand (case-sensitive match
+  # avoids false-positives on the lowercase `synth-d:` namespace pattern
+  # above and on bare-word `synth` in domain-named files like
+  # `state/synth.svelte.js` or `faust/synth.dsp`).
+  'SYNTH-D'
 )
 
 # ─── Run the checks ──────────────────────────────────────────────────────────
