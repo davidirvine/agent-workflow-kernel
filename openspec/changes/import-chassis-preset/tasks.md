@@ -61,7 +61,7 @@
 
 - [x] 10.1 Confirm no dedicated FAUST install step is needed in `.github/workflows/ci.yml` per design D10 — FAUST is provisioned transitively by `preset-build`'s `npm ci` via the `@grame/faustwasm` npm dep. Verify the workflow's existing `setup-node` (from slice 1, via `.nvmrc`) is reused by the new `preset-build` job and no system-level FAUST tool is added at the kernel level (the kernel-dep-posture rule in D7). No workflow YAML change for FAUST.
 - [x] 10.2 Add a `preset-build` job that runs `npm ci && npm run build` inside `presets/svelte-faust-synth/`, plus the preset's own lint/format, plus the traveling chassis-purity test (vitest).
-- [ ] 10.3 Add a `preset-leak-check` job that runs `scripts/check-identity-leak.sh` and `scripts/check-manifest.sh`.
+- [x] 10.3 Add a `preset-leak-check` job that runs `scripts/check-identity-leak.sh` and `scripts/check-manifest.sh`.
 - [x] 10.4 Leave the `smoke-app` stub unchanged (slice 5 turns it on).
 - [ ] 10.5 Update `STACK.md`'s "Completion-gate test commands" and "Feature-level verification" sections to list the new gates (`preset-build`, `preset-leak-check`, the extraction audit's one-time run); add **Node + npm (via `.nvmrc`) as the preset's only build-time prerequisite** alongside `shellcheck`/`shfmt` — per design D10 + D7, FAUST is provisioned via the `@grame/faustwasm` npm dep, so it is _not_ a separate local prerequisite. Also state the kernel-dep-posture rule (D7) explicitly: "the kernel root does not install preset deps; each preset is self-contained." Replace the "these gates do not exist yet" bootstrap note since this slice is the change that establishes them.
 

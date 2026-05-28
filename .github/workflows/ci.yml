@@ -45,6 +45,22 @@ jobs:
       - name: Run shared checks (parity with pre-push)
         run: scripts/checks.sh
 
+  # Slice-2 gates (a) + (b): manifest-validate + schema-independent
+  # identity-leak denylist (design D7). Both checks live in scripts/ so they
+  # ship downstream via sync-kernel.sh; this job just invokes them. No
+  # node_modules install needed — both are pure bash with jq.
+  preset-leak-check:
+    name: preset-leak-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Manifest validate
+        run: scripts/check-manifest.sh
+
+      - name: Identity-leak denylist
+        run: scripts/check-identity-leak.sh
+
   # Slice-2 gate (d): the preset is a self-contained buildable unit
   # (preset-portability spec). FAUST is provisioned via the @grame/faustwasm
   # npm dep (design D10) — no system FAUST install is needed and none is added
