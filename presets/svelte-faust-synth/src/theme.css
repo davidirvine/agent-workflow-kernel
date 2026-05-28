@@ -1,0 +1,90 @@
+/*
+ * theme.css — synth-d's visual identity, the single instrument-side override point.
+ *
+ * Two layers (design D1):
+ *   PALETTE     — the synth's identity (~12 tokens). A synth reskins by editing
+ *                 this block; component tokens cascade automatically.
+ *   COMPONENT   — role/component tokens that reference the palette (or hold a
+ *                 one-off shade). Override one for fine control (deep override).
+ *
+ * Every value equals synth-d's current color, so the default theme is
+ * pixel-identical to the pre-tokenization app (design D3). Each tokenized
+ * declaration in a component is `var(--token, <current-value>)` whose fallback
+ * equals the resolved value here — a disagreement is a defect, not a new look.
+ *
+ * This token catalog is the chassis's public, versioned styling contract (D4):
+ * the reusable surface is the palette + the chassis component tokens. Renaming a
+ * token is a breaking change for downstream synths' theme.css.
+ */
+
+:root {
+  /* ── Palette (identity) ───────────────────────────────────────────────── */
+  --accent-warm: #c87941; /* orange accent */
+  --text-primary: #e8dcc8; /* cream text */
+  --text-muted: #888; /* muted labels / button text */
+  --text-dim: #666; /* dim hints / units */
+  --text-faint: #555; /* faintest grey */
+  --surface-deep: #111111; /* body background, LED off-state */
+  --surface-base: #1c1c1c; /* panel / inset / scope backgrounds */
+  --surface-raised: #2a2a2a; /* controls, buttons, knob body */
+  --border: #333; /* panel borders, rails */
+  --border-strong: #444; /* control borders */
+  --led-on: #20b040; /* active green */
+  --danger: #c8413a; /* clip / danger red */
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', ui-monospace, monospace;
+
+  /* ── Component (cascade from palette; one-offs hold their own shade) ───── */
+
+  /* surfaces & structure */
+  --panel-bg: var(--surface-base); /* #1c1c1c */
+  --panel-border: var(--border); /* #333 */
+  --control-bg: var(--surface-raised); /* #2a2a2a */
+  --control-border: var(--border-strong); /* #444 */
+
+  /* text */
+  --panel-label-color: var(--text-primary); /* #e8dcc8 */
+  --control-label-color: var(--text-muted); /* #888 */
+  --control-hint-color: var(--text-dim); /* #666 */
+  --control-faint-color: var(--text-faint); /* #555 */
+
+  /* accent */
+  --accent-color: var(--accent-warm); /* #c87941 */
+  --accent-active-bg: #3a2a1a; /* warm-dark active button bg */
+  --accent-active-hover-bg: #4a3424; /* warm-dark active hover bg */
+
+  /* active green / led */
+  --led-on-color: var(--led-on); /* #20b040 */
+  --led-on-bg: #1a2a1a; /* green-dark active button bg */
+  --led-off-color: var(--surface-deep); /* #111111 */
+
+  /* danger */
+  --danger-color: var(--danger); /* #c8413a */
+
+  /* knob */
+  --knob-arc-color: var(--accent-warm); /* #c87941 active arc */
+  --knob-arc-track-color: var(--border); /* #333 background arc */
+  --knob-track-color: var(--surface-raised); /* #2a2a2a body fill */
+  --knob-track-stroke: var(--border-strong); /* #444 body stroke */
+  --knob-tick-label-color: var(--text-primary); /* #e8dcc8 SVG tick label */
+  --knob-tick-color: #6a6a6a; /* tick label grey */
+
+  /* scope */
+  --scope-trace-color: var(--text-primary); /* #e8dcc8 canvas stroke */
+
+  /* power button */
+  --power-glow-warn: #e07820; /* orange spin-up ring */
+  --power-glow-ready: #e0c020; /* yellow ready ring */
+  --power-on-color: var(--led-on); /* #20b040 powered ring */
+
+  /* midi status */
+  --midi-indicator-off: var(--text-faint); /* #555 idle dot */
+  --midi-connected-color: #5ccc5c; /* connected green */
+
+  /* keyboard */
+  --key-white-fill: #dddddd;
+  --key-white-stroke: var(--text-muted); /* #888 */
+  --key-black-fill: #1a1a1a;
+  --key-black-stroke: #000;
+  --key-active-fill: var(--accent-warm); /* #c87941 */
+  --key-label-color: #aaa;
+}

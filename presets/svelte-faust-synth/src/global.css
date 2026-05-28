@@ -1,0 +1,22 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--surface-deep, #111111);
+  color: var(--text-primary, #e8dcc8);
+  font-family: var(
+    --font-mono,
+    'JetBrains Mono',
+    'Cascadia Code',
+    'Fira Code',
+    ui-monospace,
+    monospace
+  );
+  min-height: 100vh;
+  overflow-x: hidden;
+}
