@@ -123,13 +123,27 @@ while IFS= read -r line; do stack_paths+=("$line"); done < <(jq -r '[.stack[].pa
 
 check_path_exists() {
   local p="$1" group="$2"
-  # Globs are expanded via shell. A glob with no matches counts as missing.
+  # Split on whether $p is a literal path or a glob. Literal paths are stat'd
+  # directly (the safest path — no expansion ambiguity for filenames with
+  # spaces or glob metacharacters in their name). Glob patterns expand under
+  # `shopt -s nullglob` so a zero-match glob produces an empty array, which
+  # the size check below treats as missing.
+  if [[ "$p" != *[*?[]* ]]; then
+    if [ ! -e "$p" ]; then
+      print_violation "manifest $group path '$p' does not exist in the repo"
+    fi
+    return
+  fi
+  # Glob path: enable nullglob in a subshell so zero matches yield an empty
+  # array rather than the unexpanded literal, then word-split.
+  shopt -s nullglob
   # shellcheck disable=SC2206
   # (intentional: $p IS a glob pattern; word-splitting on the unquoted
   # expansion is precisely what enables the wildcard match)
   local matches=($p)
-  if [ "${#matches[@]}" -eq 1 ] && [ ! -e "${matches[0]}" ]; then
-    print_violation "manifest $group path '$p' does not exist in the repo"
+  shopt -u nullglob
+  if [ "${#matches[@]}" -eq 0 ]; then
+    print_violation "manifest $group glob '$p' matched nothing in the repo"
   fi
 }
 

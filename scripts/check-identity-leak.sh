@@ -73,9 +73,12 @@ shell_allowlist_paths() {
   printf '%s\n' "$preset/src/components/Shell.svelte"
 }
 
-# Build-time globals injected by Vite; not donor identity, not substitution
-# sentinels. Excluded from the un-substituted-sentinel check.
-VITE_BUILD_SENTINELS_RE='__APP_VERSION__|__GIT_BRANCH__'
+# Build-time globals injected by Vite's `define`; not donor identity, not
+# new-app.sh substitution sentinels. Excluded from the un-substituted-sentinel
+# check. The preset's vite.config.js provides placeholder defaults for
+# __APP_TITLE__ and __APP_REPO_URL__ so the standalone build renders sensible
+# text; a generated app overrides them in its own vite.config.js.
+VITE_BUILD_SENTINELS_RE='__APP_VERSION__|__GIT_BRANCH__|__APP_TITLE__|__APP_REPO_URL__'
 
 # ─── Donor-identity literals ─────────────────────────────────────────────────
 

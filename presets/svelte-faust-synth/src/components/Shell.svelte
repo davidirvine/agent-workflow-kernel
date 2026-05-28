@@ -339,7 +339,7 @@
   <header class="header">
     <a
       class="github-link"
-      href="__APP_REPO_URL__"
+      href={__APP_REPO_URL__}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="GitHub repository"
@@ -358,7 +358,7 @@
       </svg>
     </a>
     <div class="title-block">
-      <span class="title">__APP_TITLE__</span>
+      <span class="title">{__APP_TITLE__}</span>
       <span class="version-label">{versionLabel}</span>
     </div>
     <div class="header-right">

@@ -1,6 +1,11 @@
 import { FaustMonoDspGenerator } from '@grame/faustwasm'
 import { buildNoteOnMessages } from './keyboard.js'
 
+// The FAUST DSP file is `faust/synth.dsp`, compiled with `dspName = 'synth'`
+// (the basename); the WebAudio param paths the runtime exposes are then
+// `/synth/<param>`. createNode below is called with the matching name 'synth'
+// — if you rename the DSP, update BOTH this prefix AND createNode's name arg
+// or every setParam / output handler lookup silently misses.
 const PARAM_PREFIX = '/synth/'
 
 /** @type {AudioContext | null} */
