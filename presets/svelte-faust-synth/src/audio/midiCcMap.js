@@ -1,5 +1,3 @@
-const STORAGE_PREFIX = 'midiCc:'
-
 export class MidiCcMap {
   /** @type {Map<number, { param: string, min: number, max: number }>} */
   #byCC = new Map()
@@ -14,11 +12,31 @@ export class MidiCcMap {
    * @type {Record<string, string>}
    */
   #paramRenames
+  /**
+   * localStorage key prefix, composed from the app-namespace + `midiCc:`. The
+   * namespace is constructor-injected per the D4 fallback pattern (mirroring
+   * patches/storage.js and audio/wheelPhysicsStore.js) so two kernel-derived
+   * apps sharing the same origin do not collide on each other's MIDI CC
+   * mappings. Empty-namespace default preserves backward-compat for any
+   * legacy direct caller.
+   * @type {string}
+   */
+  #storagePrefix
 
-  /** @param {Record<string, string>} [paramRenames] persisted→current name map */
-  constructor(paramRenames = {}) {
+  /**
+   * @param {string} [namespace] app-namespace prefix (e.g. `myapp:`).
+   *   Empty default keeps legacy callers' `'midiCc:'` keys unchanged.
+   * @param {Record<string, string>} [paramRenames] persisted→current name map
+   */
+  constructor(namespace = '', paramRenames = {}) {
+    this.#storagePrefix = namespace + 'midiCc:'
     this.#paramRenames = paramRenames
     this.#load()
+  }
+
+  /** Exposed for tests; not for runtime use. */
+  get _storagePrefix() {
+    return this.#storagePrefix
   }
 
   /** @param {number} cc @param {string} param @param {number} min @param {number} max */
@@ -28,7 +46,7 @@ export class MidiCcMap {
     if (oldCc !== undefined) {
       this.#byCC.delete(oldCc)
       try {
-        localStorage.removeItem(STORAGE_PREFIX + oldCc)
+        localStorage.removeItem(this.#storagePrefix + oldCc)
       } catch {
         /* localStorage unavailable */
       }
@@ -36,7 +54,7 @@ export class MidiCcMap {
     this.#byCC.set(cc, { param, min, max })
     this.#byParam.set(param, cc)
     try {
-      localStorage.setItem(STORAGE_PREFIX + cc, JSON.stringify({ param, min, max }))
+      localStorage.setItem(this.#storagePrefix + cc, JSON.stringify({ param, min, max }))
     } catch {
       /* localStorage unavailable */
     }
@@ -67,8 +85,8 @@ export class MidiCcMap {
       const entries = []
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i)
-        if (!key?.startsWith(STORAGE_PREFIX)) continue
-        const cc = Number(key.slice(STORAGE_PREFIX.length))
+        if (!key?.startsWith(this.#storagePrefix)) continue
+        const cc = Number(key.slice(this.#storagePrefix.length))
         if (isNaN(cc)) continue
         const raw = localStorage.getItem(key)
         if (!raw) continue

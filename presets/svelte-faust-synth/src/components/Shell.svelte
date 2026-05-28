@@ -124,7 +124,7 @@
   // bends a live note and spring frames with nothing sounding stay inert.
   let currentNoteFreq = $state(/** @type {number | null} */ (null))
 
-  const midiCcMap = new MidiCcMap(PARAM_RENAMES)
+  const midiCcMap = new MidiCcMap('__APP_NAMESPACE__', PARAM_RENAMES)
 
   const midiManager = new MidiManager({
     onNoteOn: (/** @type {number} */ note, /** @type {number} */ freq) => {

@@ -10,7 +10,12 @@ export function mtof(midiNote) {
  * @param {number} pos
  * @param {number} min
  * @param {number} max
- * @param {string} scale
+ * @param {string} scale - `linear` | `log` | `log-reverse` | `fine-center`.
+ *   For `log` / `log-reverse`, the schema author MUST keep `min > 0`. With
+ *   `min = 0`, `min * Math.pow(max / min, pos)` evaluates to `0 * Infinity`
+ *   (NaN) and `valueToNormalized` hits `Math.log(val / 0)`. No runtime guard
+ *   here because every preset's schema can pick its own scale per knob; the
+ *   constraint is documented on this contract instead.
  * @returns {number}
  */
 export function normalizedToValue(pos, min, max, scale) {
