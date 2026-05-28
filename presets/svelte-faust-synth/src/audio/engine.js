@@ -14,11 +14,20 @@ let mixerPeakValue = 0
 let outputPeakValue = 0
 
 export async function powerOn() {
+  // Why: this function deliberately creates a fresh AudioContext on EVERY call
+  // without an early-return guard. The chassis test `powerOn creates a new
+  // AudioContext on every call` (engine.test.js) is the behavioral contract;
+  // the Shell pairs powerOn/powerOff so a re-entry leak is not a real concern,
+  // and an idempotent guard here would silently break callers expecting a
+  // fresh context (e.g. after an external context close). A roborev review
+  // flagged this as a Low; the test is the desired behavior, not a bug.
   ctx = new AudioContext({ sampleRate: 48000 })
   analyserNode = ctx.createAnalyser()
   analyserNode.fftSize = 2048
-  // Expose for Playwright smoke tests
-  if (typeof window !== 'undefined') window.__audioCtx = ctx
+  // Expose for Playwright smoke tests — DEV-only so the global is stripped
+  // from production builds (Vite's import.meta.env.DEV constant-folds at
+  // build time).
+  if (import.meta.env.DEV && typeof window !== 'undefined') window.__audioCtx = ctx
   await ctx.resume()
 
   const base = import.meta.env.BASE_URL

@@ -1,9 +1,9 @@
 {
-  "sourceRepo": "/Users/dirvine/source/agent-workflow",
+  "sourceRepo": "${SYNTHD_REPO:-<path-to-synth-d-clone>}",
   "sourceCommit": "09c5bf63f16e5b89ed2050fc75def0a4f39c31f6",
   "sourceFile": "src/param-schema.js",
   "capturedAt": "2026-05-28",
-  "note": "Full subtractive param vocabulary from synth-d main, used as the forbidden-name set for the one-time chassis-purity extraction audit (task 8.2 / design D6).",
+  "note": "Full subtractive param vocabulary from synth-d main, used as the forbidden-name set for the one-time chassis-purity extraction audit (task 8.2 / design D6). The sourceCommit SHA is the authoritative reproducibility anchor; sourceRepo is the env-var reference (matching task 8.1's preflight) and does not leak a developer's local filesystem layout.",
   "totalEntries": 48,
   "entriesByKind": {
     "switch": 17,

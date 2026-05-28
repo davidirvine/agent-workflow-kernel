@@ -95,14 +95,20 @@ export const BIPOLAR_PARAMS = Object.freeze(
 
 /**
  * Rest value when the instrument is powered off: midpoint for bipolar params,
- * otherwise the min. Only valid for ccScalable params (the chassis only asks
- * for these).
+ * otherwise the min for ccScalable params. For non-ccScalable params (e.g.
+ * `kind: 'switch'` entries that the UI does not animate to rest on power-off,
+ * but which the chassis may still query through `midiStateFor`), returns the
+ * factory default — the param's rest state is "whatever it was set to last,"
+ * which the default approximates. A defensive guard rather than a guarantee
+ * the caller restricts to ccScalable params.
  *
  * @param {string} p
  * @returns {number}
  */
 export function powerOffValue(p) {
-  return BIPOLAR_PARAMS.has(p) ? (KNOB_PARAMS[p].min + KNOB_PARAMS[p].max) / 2 : KNOB_PARAMS[p].min
+  const k = KNOB_PARAMS[p]
+  if (!k) return PARAM_DEFAULTS[p] ?? 0
+  return BIPOLAR_PARAMS.has(p) ? (k.min + k.max) / 2 : k.min
 }
 
 /**
