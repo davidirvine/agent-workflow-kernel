@@ -45,9 +45,61 @@ jobs:
       - name: Run shared checks (parity with pre-push)
         run: scripts/checks.sh
 
+  # Slice-2 gates (a) + (b): manifest-validate + schema-independent
+  # identity-leak denylist (design D7). Both checks live in scripts/ so they
+  # ship downstream via sync-kernel.sh; this job just invokes them. No
+  # node_modules install needed — both are pure bash with jq.
+  preset-leak-check:
+    name: preset-leak-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Manifest validate
+        run: scripts/check-manifest.sh
+
+      - name: Identity-leak denylist
+        run: scripts/check-identity-leak.sh
+
+  # Slice-2 gate (d): the preset is a self-contained buildable unit
+  # (preset-portability spec). FAUST is provisioned via the @grame/faustwasm
+  # npm dep (design D10) — no system FAUST install is needed and none is added
+  # here (D7's kernel-dep-posture rule: kernel root stays minimal, preset
+  # self-contains). The job also runs the preset's own prettier check and the
+  # traveling chassis-purity test (task 9.1).
+  preset-build:
+    name: preset-build (svelte-faust-synth)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: presets/svelte-faust-synth
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: presets/svelte-faust-synth/package-lock.json
+
+      - run: npm ci
+
+      - name: Lint / format check (preset's own prettier with Svelte plugin)
+        run: npm run lint
+
+      - name: Build (FAUST prebuild + Vite)
+        run: npm run build
+
+      - name: Traveling chassis-purity test
+        run: npx vitest run src/chassis-purity.test.js
+
+      - name: Power-off-silence vitest
+        run: npx vitest run src/power-off-silence.test.js
+
   # Pending stub (D4): present and green from day one so the harness slot
   # exists in every CI run. Slices 3-5 fill in real pipeline stages by
-  # editing this one job rather than adding new ones.
+  # editing this one job rather than adding new ones. Slice 2 deliberately
+  # does NOT touch this stub (task 10.4).
   smoke-app:
     name: smoke-app
     runs-on: ubuntu-latest

@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "kernel": {
+    "paths": [
+      "scripts/**",
+      ".githooks/**",
+      ".github/workflows/**",
+      "release-please-config.json",
+      ".release-please-manifest.json",
+      "CLAUDE.md",
+      "STACK.md",
+      "WORKFLOW-NOTES.md",
+      "package.json",
+      ".prettierrc",
+      ".prettierignore",
+      ".nvmrc",
+      ".roborev.toml"
+    ],
+    "specs": [
+      "openspec/specs/dev-gates/spec.md",
+      "openspec/specs/release-automation/spec.md",
+      "openspec/specs/preset-portability/spec.md"
+    ]
+  },
+  "stack": {
+    "presets/svelte-faust-synth": {
+      "paths": [
+        "presets/svelte-faust-synth/package.json",
+        "presets/svelte-faust-synth/package-lock.json",
+        "presets/svelte-faust-synth/vite.config.js",
+        "presets/svelte-faust-synth/svelte.config.js",
+        "presets/svelte-faust-synth/.prettierrc",
+        "presets/svelte-faust-synth/.gitignore",
+        "presets/svelte-faust-synth/index.html",
+        "presets/svelte-faust-synth/src/App.svelte",
+        "presets/svelte-faust-synth/src/main.js",
+        "presets/svelte-faust-synth/src/test-setup.js",
+        "presets/svelte-faust-synth/src/env.d.ts",
+        "presets/svelte-faust-synth/src/global.d.ts",
+        "presets/svelte-faust-synth/src/global.css",
+        "presets/svelte-faust-synth/src/theme.css",
+        "presets/svelte-faust-synth/src/power-off-silence.test.js",
+        "presets/svelte-faust-synth/src/chassis-purity.test.js",
+        "presets/svelte-faust-synth/src/lib/**",
+        "presets/svelte-faust-synth/src/audio/**",
+        "presets/svelte-faust-synth/src/components/Shell.svelte",
+        "presets/svelte-faust-synth/src/components/Knob.svelte",
+        "presets/svelte-faust-synth/src/components/Knob.test.js",
+        "presets/svelte-faust-synth/src/components/Wheel.svelte",
+        "presets/svelte-faust-synth/src/components/Wheel.test.js",
+        "presets/svelte-faust-synth/src/components/WheelsPanel.svelte",
+        "presets/svelte-faust-synth/src/components/WheelsPanel.test.js",
+        "presets/svelte-faust-synth/src/components/Keyboard.svelte",
+        "presets/svelte-faust-synth/src/components/Keyboard.test.harness.svelte",
+        "presets/svelte-faust-synth/src/components/Keyboard.test.js",
+        "presets/svelte-faust-synth/src/components/PowerButton.svelte",
+        "presets/svelte-faust-synth/src/components/PowerButton.test.js",
+        "presets/svelte-faust-synth/src/components/MidiStatus.svelte",
+        "presets/svelte-faust-synth/src/components/MidiStatus.test.js",
+        "presets/svelte-faust-synth/src/components/PatchControl.svelte",
+        "presets/svelte-faust-synth/src/components/PatchControl.test.js",
+        "presets/svelte-faust-synth/src/components/Scope.svelte",
+        "presets/svelte-faust-synth/src/components/Scope.test.js",
+        "presets/svelte-faust-synth/src/components/LevelLed.svelte",
+        "presets/svelte-faust-synth/src/components/LevelLed.test.js",
+        "presets/svelte-faust-synth/src/components/EmptyPanel.svelte",
+        "presets/svelte-faust-synth/src/components/EmptyPanel.test.js",
+        "presets/svelte-faust-synth/src/components/RegisterPanel.svelte",
+        "presets/svelte-faust-synth/src/components/RegisterPanel.test.js",
+        "presets/svelte-faust-synth/src/patches/storage.js",
+        "presets/svelte-faust-synth/src/patches/storage.test.js",
+        "presets/svelte-faust-synth/src/state/synth.svelte.js",
+        "presets/svelte-faust-synth/src/state/synth.test.js"
+      ],
+      "specs": [
+        "openspec/specs/chassis-architecture/spec.md",
+        "openspec/specs/chassis-theming/spec.md"
+      ]
+    }
+  }
+}

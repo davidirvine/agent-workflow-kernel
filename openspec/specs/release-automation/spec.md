@@ -1,3 +1,7 @@
+---
+tier: kernel
+---
+
 # release-automation Specification
 
 ## Purpose

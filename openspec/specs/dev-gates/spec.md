@@ -1,3 +1,7 @@
+---
+tier: kernel
+---
+
 # dev-gates Specification
 
 ## Purpose

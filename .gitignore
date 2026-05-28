@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+# Explicit (already matched by the bare rule above; listed for discoverability per task 1.1)
+/presets/svelte-faust-synth/node_modules/
 
 # Vite build output
 dist/
