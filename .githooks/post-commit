@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+# post-commit: deliberate no-op (D2).
+#
+# Commits in this repo are NOT auto-reviewed. roborev runs only at the explicit
+# gates (proposal design review, end-of-implementation `roborev refine`, ad-hoc
+# `roborev review`) — never automatically per commit. This stub is the
+# version-controlled statement of that explicit-gate posture: while
+# core.hooksPath points at .githooks, git resolves all hooks from here and
+# ignores .git/hooks/, so a future `roborev init` that writes a per-commit
+# review hook into .git/hooks/ is inert, and any change to this stub shows up
+# as a reviewable diff rather than silently re-arming auto-review.
+exit 0

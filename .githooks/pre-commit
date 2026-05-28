@@ -1,0 +1,68 @@
+#!/usr/bin/env sh
+# pre-commit: run the fast lint/format subset over the list of STAGED files,
+# checking each file's working-tree version (the pragmatic approach most
+# pre-commit hooks take — see design D3). Scope is intentionally narrower than
+# scripts/checks.sh: it skips the extensionless .githooks/* scripts and does
+# not extract the staged blob, so the rare partial-stage mismatch and hook-only
+# edits are caught by the full-repo pre-push/CI gate instead.
+set -eu
+
+# Keep the shfmt invocation identical to scripts/checks.sh (2-space indent).
+SHFMT="shfmt -i 2"
+
+fail=0
+
+# require <tool> <install-hint> — report a missing tool actionably (naming it)
+# and mark failure rather than crashing with a not-found stack trace.
+require() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "✗ required tool '$1' not found — $2" >&2
+    fail=1
+    return 1
+  fi
+}
+
+# Staged, not-deleted files. In git's --diff-filter, an UPPERCASE letter
+# selects a status and a lowercase letter excludes it (git-diff: "these
+# upper-case letters can be downcased to exclude"), so lowercase `d` excludes
+# Deleted paths — we must not try to lint a file that no longer exists.
+staged=$(git diff --cached --name-only --diff-filter=d)
+[ -n "$staged" ] || exit 0
+
+sh_files=""
+fmt_files=""
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  case "$f" in
+  *.sh) sh_files="$sh_files $f" ;;
+  *.md | *.json | *.toml) fmt_files="$fmt_files $f" ;;
+  esac
+done <<EOF
+$staged
+EOF
+
+if [ -n "$sh_files" ]; then
+  if require shellcheck "install ShellCheck (brew install shellcheck / apt-get install shellcheck)"; then
+    # shellcheck disable=SC2086 # staged paths have no spaces; word-splitting is intended
+    shellcheck $sh_files || fail=1
+  fi
+  if require shfmt "install shfmt v3.8.0 (https://github.com/mvdan/sh/releases)"; then
+    # shellcheck disable=SC2086 # staged paths have no spaces; word-splitting is intended
+    $SHFMT --diff $sh_files || fail=1
+  fi
+fi
+
+if [ -n "$fmt_files" ]; then
+  # prettier applies .prettierignore even to explicitly passed paths, so a
+  # staged file under an ignored tree (openspec/, ...) is skipped, matching
+  # scripts/checks.sh.
+  if require npx "install Node (see .nvmrc) and run 'npm install'"; then
+    # shellcheck disable=SC2086 # staged paths have no spaces; word-splitting is intended
+    npx prettier --check $fmt_files || fail=1
+  fi
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "✗ pre-commit checks failed — commit blocked" >&2
+  exit 1
+fi

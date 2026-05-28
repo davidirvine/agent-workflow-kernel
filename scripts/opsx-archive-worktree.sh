@@ -40,7 +40,7 @@ fi
 
 ARCHIVE_GLOB="${REPO_ROOT}/openspec/changes/archive/*-${CHANGE_NAME}"
 # shellcheck disable=SC2086
-if ! compgen -G "$ARCHIVE_GLOB" > /dev/null; then
+if ! compgen -G "$ARCHIVE_GLOB" >/dev/null; then
   echo "✗ No archived change found matching openspec/changes/archive/*-${CHANGE_NAME}" >&2
   echo "  Run /opsx:archive ${CHANGE_NAME} first, then commit the archive to main." >&2
   exit 1
@@ -72,7 +72,7 @@ if git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
   git branch -D "$BRANCH"
 fi
 
-if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
+if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
   echo "→ Deleting remote branch origin/${BRANCH}..."
   git push origin --delete "$BRANCH"
 fi

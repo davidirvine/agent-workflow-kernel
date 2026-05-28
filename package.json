@@ -1,0 +1,14 @@
+{
+  "name": "agent-workflow-kernel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Stack-agnostic spec-driven workflow kernel: OpenSpec workflow, roborev review gates, worktree lifecycle scripts, and reusable presets.",
+  "scripts": {
+    "postinstall": "scripts/install-hooks.sh"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "prettier-plugin-toml": "^2.0.1"
+  }
+}

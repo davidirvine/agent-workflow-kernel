@@ -1,3 +1,5 @@
 agent = "claude-code"
-post_commit_review = "commit"
+# post_commit_review intentionally left off: reviews run only at the explicit
+# gates (see CLAUDE.md "Code review with roborev"), never automatically per
+# commit. The committed .githooks/post-commit no-op encodes the same posture.
 auto_close_passing_reviews = true
