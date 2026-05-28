@@ -1,20 +1,19 @@
 /*
- * theme.css — synth-d's visual identity, the single instrument-side override point.
+ * theme.css — the preset's visual identity, the single app-side override point.
  *
- * Two layers (design D1):
- *   PALETTE     — the synth's identity (~12 tokens). A synth reskins by editing
- *                 this block; component tokens cascade automatically.
+ * Two layers (chassis-theming spec):
+ *   PALETTE     — the preset's identity (~12 tokens). A downstream app reskins
+ *                 by editing this block; component tokens cascade automatically.
  *   COMPONENT   — role/component tokens that reference the palette (or hold a
  *                 one-off shade). Override one for fine control (deep override).
  *
- * Every value equals synth-d's current color, so the default theme is
- * pixel-identical to the pre-tokenization app (design D3). Each tokenized
- * declaration in a component is `var(--token, <current-value>)` whose fallback
- * equals the resolved value here — a disagreement is a defect, not a new look.
+ * Each tokenized declaration in a component is `var(--token, <current-value>)`
+ * whose fallback equals the resolved value here — a disagreement is a defect,
+ * not a new look.
  *
- * This token catalog is the chassis's public, versioned styling contract (D4):
- * the reusable surface is the palette + the chassis component tokens. Renaming a
- * token is a breaking change for downstream synths' theme.css.
+ * This token catalog is the chassis's public, versioned styling contract: the
+ * reusable surface is the palette + the chassis component tokens. Renaming a
+ * token is a breaking change for downstream apps' theme.css.
  */
 
 :root {

@@ -3,7 +3,7 @@ import { render, fireEvent, waitFor } from '@testing-library/svelte'
 import App from './App.svelte'
 
 // The reference instrument is a drone — continuous amplitude with no envelope.
-// A gated subtractive synth is silent by default whenever no key is held, so
+// A gated, envelope-shaped synth is silent by default whenever no key is held, so
 // it never exercises the chassis power-off-silence path; this preset's reference
 // instrument is the first instrument that does (design D5). This test guards
 // the chassis-state/engine-glue layer of that path: when the power button

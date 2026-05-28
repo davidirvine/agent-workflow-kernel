@@ -31,7 +31,7 @@
 ## 4. Donor-identity parameterization
 
 - [x] 4.1 In the preset's `patches/storage.js`, replace the `synth-d:` localStorage namespace literal with constructor-injected configuration (mirroring the Phase-1 `MidiCcMap` pattern in D4) — storage takes the namespace at instantiation, the `Shell` constructs it with the value `__APP_NAMESPACE__`, and tests pass the namespace explicitly. The sentinel string `__APP_NAMESPACE__` therefore appears only at the `Shell`'s instantiation site, where `new-app.sh` substitutes it. Update the storage tests to construct with an explicit namespace; do not regress existing storage scenarios.
-- [ ] 4.2 Audit chassis source for any other donor-identity literals (GitHub URLs naming `synth-d`, deploy paths, package-name literals). If found, parameterize or remove; record any decisions inline.
+- [x] 4.2 Audit chassis source for any other donor-identity literals (GitHub URLs naming `synth-d`, deploy paths, package-name literals). If found, parameterize or remove; record any decisions inline.
 
 ## 5. Sync new specs to `openspec/specs/` and back-tag slice 1
 

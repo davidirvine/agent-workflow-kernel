@@ -9,11 +9,6 @@
   import Knob from './Knob.svelte'
   import { PHYSICS_RANGES } from '../audio/wheelPhysics.js'
   import { BEND_SEMITONES } from '../audio/pitchbend.js'
-  import {
-    loadWheelPhysics,
-    saveWheelPhysics,
-    resetWheelPhysics,
-  } from '../audio/wheelPhysicsStore.js'
 
   /** @type {{
     modExternalValue?: number,
@@ -22,6 +17,11 @@
     pitchExternalNonce?: number,
     onModChange?: (e: { param: string, value: number }) => void,
     onPitchChange?: (e: { value: number }) => void,
+    wheelStorage: {
+      loadWheelPhysics: () => any,
+      saveWheelPhysics: (physics?: any) => boolean,
+      resetWheelPhysics: () => any,
+    },
   }} */
   let {
     modExternalValue,
@@ -30,7 +30,12 @@
     pitchExternalNonce,
     onModChange,
     onPitchChange,
+    wheelStorage,
   } = $props()
+
+  const loadWheelPhysics = wheelStorage.loadWheelPhysics
+  const saveWheelPhysics = wheelStorage.saveWheelPhysics
+  const resetWheelPhysics = wheelStorage.resetWheelPhysics
 
   let physics = $state(loadWheelPhysics())
 

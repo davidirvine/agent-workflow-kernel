@@ -1,15 +1,28 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import {
-  loadWheelPhysics,
-  saveWheelPhysics,
-  resetWheelPhysics,
-  defaultWheelPhysics,
-  STORAGE_KEY,
-} from './wheelPhysicsStore.js'
+import { createWheelPhysicsStore, defaultWheelPhysics } from './wheelPhysicsStore.js'
 import { DEFAULT_PHYSICS } from './wheelPhysics.js'
+
+// The chassis carries no donor-identity literal in wheelPhysicsStore.js (D4
+// fallback clause): the namespace is constructor-injected. These tests use
+// `test:` as their explicit namespace; every storage-key assertion is computed
+// from `store._storageKey` so no literal is hardcoded twice.
+const TEST_NAMESPACE = 'test:'
+
+/** @type {ReturnType<typeof createWheelPhysicsStore>} */
+let store
+let loadWheelPhysics
+let saveWheelPhysics
+let resetWheelPhysics
+/** @type {string} */
+let STORAGE_KEY
 
 beforeEach(() => {
   localStorage.clear()
+  store = createWheelPhysicsStore(TEST_NAMESPACE)
+  loadWheelPhysics = store.loadWheelPhysics
+  saveWheelPhysics = store.saveWheelPhysics
+  resetWheelPhysics = store.resetWheelPhysics
+  STORAGE_KEY = store._storageKey
 })
 
 describe('wheelPhysicsStore — defaults', () => {
@@ -28,6 +41,21 @@ describe('wheelPhysicsStore — defaults', () => {
   })
 })
 
+describe('wheelPhysicsStore — namespace is constructor-injected', () => {
+  it('composes the storage key from the constructed namespace', () => {
+    expect(STORAGE_KEY).toBe(TEST_NAMESPACE + 'wheel-physics')
+  })
+
+  it('two stores with different namespaces do not see each other', () => {
+    const other = createWheelPhysicsStore('other:')
+    saveWheelPhysics({
+      mod: { mass: 2, spring: 30, damping: 0.5 },
+      pitch: { mass: 0.5, spring: 10, damping: 0.8 },
+    })
+    expect(other.loadWheelPhysics()).toEqual(defaultWheelPhysics())
+  })
+})
+
 describe('wheelPhysicsStore — round trip', () => {
   it('saves and loads custom physics for both wheels', () => {
     const physics = {
@@ -38,7 +66,7 @@ describe('wheelPhysicsStore — round trip', () => {
     expect(loadWheelPhysics()).toEqual(physics)
   })
 
-  it('persists under the synth-d:wheel-physics key', () => {
+  it('persists under the constructed wheel-physics key', () => {
     saveWheelPhysics(defaultWheelPhysics())
     expect(localStorage.getItem(STORAGE_KEY)).not.toBeNull()
   })
@@ -150,11 +178,7 @@ describe('wheelPhysicsStore — per-field range boundaries', () => {
   })
 })
 
-describe('wheelPhysicsStore — key and defensive inputs', () => {
-  it('uses the synth-d:wheel-physics storage key', () => {
-    expect(STORAGE_KEY).toBe('synth-d:wheel-physics')
-  })
-
+describe('wheelPhysicsStore — defensive inputs', () => {
   it('saving with no argument falls back to defaults without throwing', () => {
     expect(() => saveWheelPhysics()).not.toThrow()
     expect(loadWheelPhysics()).toEqual(defaultWheelPhysics())

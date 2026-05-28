@@ -1,6 +1,6 @@
 <script>
   // Shell: the generic, instrument-agnostic application frame (design.md D3).
-  // It owns everything that is not specific to the subtractive instrument —
+  // It owns everything that is not specific to the loaded instrument —
   // header/title/version, the power button and power lifecycle, MIDI wiring and
   // status, the keyboard row, the scope, store seeding, and the parameter/wheel
   // change chokepoints. The instrument's panel layout is injected through the
@@ -42,14 +42,17 @@
   // param-name literal (D4).
   import { KNOB_PARAMS, powerOffValue, PARAM_RENAMES } from '../param-schema.js'
   import { createPatchStorage } from '../patches/storage.js'
+  import { createWheelPhysicsStore } from '../audio/wheelPhysicsStore.js'
 
-  // Constructor-injection of the patch-storage namespace (preset-portability D4):
-  // the sentinel `__APP_NAMESPACE__` lives ONLY at this call site. `new-app.sh`
-  // (slice 3) substitutes the sentinel with the new app's namespace at generate
-  // time; the preset itself uses 'svelte-faust-synth:' as its own running value.
-  // patches/storage.js does NOT contain a `synth-d:` literal anywhere; the
-  // identity-leak check whitelists this one filename for the sentinel pattern.
+  // Constructor-injection of all chassis-storage namespaces (preset-portability
+  // D4 + 4.2 fallback): the sentinel `__APP_NAMESPACE__` lives ONLY in this
+  // file. `new-app.sh` (slice 3) substitutes the sentinel with the new app's
+  // namespace at generate time. Both stores compose their localStorage keys
+  // from the constructed namespace, so neither module carries a donor-identity
+  // literal. The identity-leak check (task 7.1) allowlists this one file for
+  // the sentinel pattern.
   const patchStorage = createPatchStorage('__APP_NAMESPACE__')
+  const wheelStorage = createWheelPhysicsStore('__APP_NAMESPACE__')
 
   // The instrument panel layout is injected as a snippet (D3). The Shell hands
   // it the chassis contract: the param-name-agnostic midiStateFor helper, the
@@ -336,7 +339,7 @@
   <header class="header">
     <a
       class="github-link"
-      href="https://github.com/davidirvine/synth-d"
+      href="__APP_REPO_URL__"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="GitHub repository"
@@ -394,6 +397,7 @@
           pitchExternalNonce={pitchWheelNonce}
           onModChange={onModWheelChange}
           onPitchChange={onPitchWheelChange}
+          {wheelStorage}
         />
         <Keyboard
           onnote={onKeyboardNote}

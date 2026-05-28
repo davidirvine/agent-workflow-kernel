@@ -2,9 +2,9 @@
 //
 // **Namespace via constructor injection (D4):** the namespace prefix is passed
 // to `createPatchStorage(namespace)` at instantiation time; this module
-// carries NO donor-identity literal. The chassis Shell is the sole instantiation
-// site (the place `new-app.sh` substitutes the `__APP_NAMESPACE__` sentinel at
-// generate time). Tests construct with their own explicit namespace.
+// carries NO donor-identity literal and NO sentinel. The chassis Shell is the
+// sole site that knows the substituted-at-generate-time namespace value; tests
+// construct with their own explicit namespace.
 //
 // Each created storage exposes:
 //   - `<namespace>patches`        → JSON array of patch names (the index/authority
@@ -45,10 +45,9 @@ export function validateName(name) {
 
 /**
  * Construct a patch-storage instance bound to the given localStorage namespace.
- * The namespace is typically the chassis Shell-supplied `__APP_NAMESPACE__`
- * value at construction time. The returned object exposes every patch-storage
- * operation; the namespace lives only on this closure, not in any persisted
- * data or module-level constant.
+ * The Shell supplies the namespace value at construction time. The returned
+ * object exposes every patch-storage operation; the namespace lives only on
+ * this closure, not in any persisted data or module-level constant.
  *
  * @param {string} namespace - The localStorage namespace prefix (e.g. `myapp:`).
  *   By convention ends with `:`; the caller controls the exact shape — this
