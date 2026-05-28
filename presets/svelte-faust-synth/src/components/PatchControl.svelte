@@ -8,18 +8,28 @@
     PARAM_NAMES,
     PARAM_DEFAULTS,
   } from '../state/synth.svelte.js'
-  import {
-    listPatches,
-    savePatch,
-    loadPatch,
-    deletePatch,
-    renamePatch,
-    validateName,
-    MAX_NAME_LENGTH,
-  } from '../patches/storage.js'
+  import { validateName, MAX_NAME_LENGTH } from '../patches/storage.js'
 
-  /** @type {{ powered?: boolean }} */
-  let { powered = false } = $props()
+  /**
+   * @type {{
+   *   powered?: boolean,
+   *   storage: {
+   *     listPatches: () => string[],
+   *     savePatch: (name: string, params: Record<string, number>) => any,
+   *     loadPatch: (name: string) => any,
+   *     deletePatch: (name: string) => boolean,
+   *     renamePatch: (oldName: string, newName: string) => any,
+   *   }
+   * }}
+   */
+  let { powered = false, storage } = $props()
+
+  // Local aliases keep the call sites unchanged from the pre-refactor shape.
+  const listPatches = storage.listPatches
+  const savePatch = storage.savePatch
+  const loadPatch = storage.loadPatch
+  const deletePatch = storage.deletePatch
+  const renamePatch = storage.renamePatch
 
   let open = $state(false)
   let rootEl = $state(/** @type {HTMLElement | null} */ (null))

@@ -41,6 +41,15 @@
   // into the param-name-agnostic MidiCcMap so the chassis carries no instrument
   // param-name literal (D4).
   import { KNOB_PARAMS, powerOffValue, PARAM_RENAMES } from '../param-schema.js'
+  import { createPatchStorage } from '../patches/storage.js'
+
+  // Constructor-injection of the patch-storage namespace (preset-portability D4):
+  // the sentinel `__APP_NAMESPACE__` lives ONLY at this call site. `new-app.sh`
+  // (slice 3) substitutes the sentinel with the new app's namespace at generate
+  // time; the preset itself uses 'svelte-faust-synth:' as its own running value.
+  // patches/storage.js does NOT contain a `synth-d:` literal anywhere; the
+  // identity-leak check whitelists this one filename for the sentinel pattern.
+  const patchStorage = createPatchStorage('__APP_NAMESPACE__')
 
   // The instrument panel layout is injected as a snippet (D3). The Shell hands
   // it the chassis contract: the param-name-agnostic midiStateFor helper, the
@@ -360,7 +369,7 @@
             midiManager.selectDevice(id)
           }}
         />
-        <PatchControl {powered} />
+        <PatchControl {powered} storage={patchStorage} />
       </div>
       <PowerButton {powered} {loading} ontoggle={handleToggle} />
     </div>
