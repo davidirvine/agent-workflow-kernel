@@ -55,7 +55,7 @@
 
 ## 9. Traveling chassis-purity test
 
-- [ ] 9.1 Add `presets/svelte-faust-synth/src/chassis-purity.test.js`: mirror synth-d's structure but derive `INSTRUMENT_PARAM_NAMES` from the current `PARAM_SCHEMA`; hardcode the universal engine set; scan chassis files via the preset's own `INSTRUMENT_FILES` exclusion list. Verify the test PASSES against the reference-instrument schema (vacuous-but-correct) and would fail if a chassis file were edited to reference a reference-instrument param name.
+- [x] 9.1 Add `presets/svelte-faust-synth/src/chassis-purity.test.js`: mirror synth-d's structure but derive `INSTRUMENT_PARAM_NAMES` from the current `PARAM_SCHEMA`; hardcode the universal engine set; scan chassis files via the preset's own `INSTRUMENT_FILES` exclusion list. Verify the test PASSES against the reference-instrument schema (vacuous-but-correct) and would fail if a chassis file were edited to reference a reference-instrument param name.
 
 ## 10. CI workflow: FAUST + new jobs
 
