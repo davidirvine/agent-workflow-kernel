@@ -1,0 +1,264 @@
+{
+  "sourceRepo": "/Users/dirvine/source/agent-workflow",
+  "sourceCommit": "09c5bf63f16e5b89ed2050fc75def0a4f39c31f6",
+  "sourceFile": "src/param-schema.js",
+  "capturedAt": "2026-05-28",
+  "note": "Full subtractive param vocabulary from synth-d main, used as the forbidden-name set for the one-time chassis-purity extraction audit (task 8.2 / design D6).",
+  "totalEntries": 48,
+  "entriesByKind": {
+    "switch": 17,
+    "controller": 1,
+    "knob": 30
+  },
+  "universalEngineParams": [
+    "freq",
+    "gate",
+    "modWheel",
+    "mixerPeak",
+    "outputPeak"
+  ],
+  "forbiddenNames": [
+    "ampAttack",
+    "ampDecay",
+    "ampRelease",
+    "ampSustain",
+    "cutoff",
+    "delayFeedback",
+    "delayMix",
+    "delayModDepth",
+    "delayModOn",
+    "delayModRate",
+    "delayOn",
+    "delayTime",
+    "drLock",
+    "filterAttack",
+    "filterDecay",
+    "filterEnvAmt",
+    "filterRelease",
+    "filterSustain",
+    "glideOn",
+    "glideRate",
+    "keyTrack",
+    "masterVol",
+    "modMix",
+    "modToFilter",
+    "modToOsc1",
+    "modToOsc2",
+    "noiseLevel",
+    "noiseType",
+    "osc1Level",
+    "osc1Range",
+    "osc1Wave",
+    "osc2Detune",
+    "osc2Level",
+    "osc2Range",
+    "osc2Wave",
+    "osc3Detune",
+    "osc3Level",
+    "osc3LfoMode",
+    "osc3LfoRate",
+    "osc3Range",
+    "osc3Wave",
+    "resonance",
+    "reverbDamp",
+    "reverbDecay",
+    "reverbOn",
+    "reverbPreDelay",
+    "reverbSend"
+  ],
+  "allEntries": [
+    {
+      "name": "ampAttack",
+      "kind": "knob"
+    },
+    {
+      "name": "ampDecay",
+      "kind": "knob"
+    },
+    {
+      "name": "ampRelease",
+      "kind": "knob"
+    },
+    {
+      "name": "ampSustain",
+      "kind": "knob"
+    },
+    {
+      "name": "cutoff",
+      "kind": "knob"
+    },
+    {
+      "name": "delayFeedback",
+      "kind": "knob"
+    },
+    {
+      "name": "delayMix",
+      "kind": "knob"
+    },
+    {
+      "name": "delayModDepth",
+      "kind": "knob"
+    },
+    {
+      "name": "delayModOn",
+      "kind": "switch"
+    },
+    {
+      "name": "delayModRate",
+      "kind": "knob"
+    },
+    {
+      "name": "delayOn",
+      "kind": "switch"
+    },
+    {
+      "name": "delayTime",
+      "kind": "knob"
+    },
+    {
+      "name": "drLock",
+      "kind": "switch"
+    },
+    {
+      "name": "filterAttack",
+      "kind": "knob"
+    },
+    {
+      "name": "filterDecay",
+      "kind": "knob"
+    },
+    {
+      "name": "filterEnvAmt",
+      "kind": "knob"
+    },
+    {
+      "name": "filterRelease",
+      "kind": "knob"
+    },
+    {
+      "name": "filterSustain",
+      "kind": "knob"
+    },
+    {
+      "name": "glideOn",
+      "kind": "switch"
+    },
+    {
+      "name": "glideRate",
+      "kind": "knob"
+    },
+    {
+      "name": "keyTrack",
+      "kind": "switch"
+    },
+    {
+      "name": "masterVol",
+      "kind": "knob"
+    },
+    {
+      "name": "modMix",
+      "kind": "knob"
+    },
+    {
+      "name": "modToFilter",
+      "kind": "switch"
+    },
+    {
+      "name": "modToOsc1",
+      "kind": "switch"
+    },
+    {
+      "name": "modToOsc2",
+      "kind": "switch"
+    },
+    {
+      "name": "modWheel",
+      "kind": "controller"
+    },
+    {
+      "name": "noiseLevel",
+      "kind": "knob"
+    },
+    {
+      "name": "noiseType",
+      "kind": "switch"
+    },
+    {
+      "name": "osc1Level",
+      "kind": "knob"
+    },
+    {
+      "name": "osc1Range",
+      "kind": "switch"
+    },
+    {
+      "name": "osc1Wave",
+      "kind": "switch"
+    },
+    {
+      "name": "osc2Detune",
+      "kind": "knob"
+    },
+    {
+      "name": "osc2Level",
+      "kind": "knob"
+    },
+    {
+      "name": "osc2Range",
+      "kind": "switch"
+    },
+    {
+      "name": "osc2Wave",
+      "kind": "switch"
+    },
+    {
+      "name": "osc3Detune",
+      "kind": "knob"
+    },
+    {
+      "name": "osc3Level",
+      "kind": "knob"
+    },
+    {
+      "name": "osc3LfoMode",
+      "kind": "switch"
+    },
+    {
+      "name": "osc3LfoRate",
+      "kind": "knob"
+    },
+    {
+      "name": "osc3Range",
+      "kind": "switch"
+    },
+    {
+      "name": "osc3Wave",
+      "kind": "switch"
+    },
+    {
+      "name": "resonance",
+      "kind": "knob"
+    },
+    {
+      "name": "reverbDamp",
+      "kind": "knob"
+    },
+    {
+      "name": "reverbDecay",
+      "kind": "knob"
+    },
+    {
+      "name": "reverbOn",
+      "kind": "switch"
+    },
+    {
+      "name": "reverbPreDelay",
+      "kind": "knob"
+    },
+    {
+      "name": "reverbSend",
+      "kind": "knob"
+    }
+  ],
+  "allowlist": []
+}
