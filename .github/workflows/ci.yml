@@ -4,6 +4,13 @@ on:
   push:
   pull_request:
 
+# Cancel superseded in-progress runs for the same ref (e.g. rapid pushes or PR
+# synchronize events) so redundant CI is not left running. Triggers stay on
+# both push and pull_request per the dev-gates spec.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint-format:
     name: lint / format
