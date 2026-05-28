@@ -13,7 +13,7 @@
 
 - [x] 2.1 Copy chassis components into `presets/svelte-faust-synth/src/components/` (`Shell.svelte`, `Knob`, `Wheel`, `WheelsPanel`, `Keyboard` + harness, `PowerButton`, `MidiStatus`, `PatchControl`, `Scope`, `LevelLed`, `EmptyPanel`, `RegisterPanel`), preserving Phase-1's chassis-purity (no instrument imports).
 - [x] 2.2 Copy chassis audio modules into `presets/svelte-faust-synth/src/audio/` (`engine`, `keyboard`, `math`, `midi`, `midiCcMap`, `pitchbend`, `wheelPhysics`, `wheelPhysicsStore`).
-- [ ] 2.3 Copy chassis state machinery (`state/synth.svelte.js`) and patches storage (`patches/storage.js`) into the preset, preserving derivation-from-schema.
+- [x] 2.3 Copy chassis state machinery (`state/synth.svelte.js`) and patches storage (`patches/storage.js`) into the preset, preserving derivation-from-schema.
 - [ ] 2.4 Copy `theme.css` and the tokenized component CSS, preserving the palette/component-token layering.
 
 ## 3. Reference instrument (minimal droning oscillator)
