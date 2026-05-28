@@ -40,8 +40,10 @@ if [ -n "$sh_files" ]; then
   fi
 fi
 
-# Markdown / JSON / TOML: prettier respects .prettierignore for explicitly
-# passed files, so ignored trees (openspec/, node_modules/, ...) are skipped.
+# Markdown / JSON / TOML: prettier applies .prettierignore even to explicitly
+# passed paths, so ignored trees (openspec/, node_modules/, .claude/, ...) are
+# not linted here. Verified: an identical mis-formatted file is skipped under
+# openspec/ but flagged at repo root (prettier 3.x).
 fmt_files=$(git ls-files '*.md' '*.json' '*.toml')
 if [ -n "$fmt_files" ]; then
   if require npx "install Node (see .nvmrc) and run 'npm install'"; then

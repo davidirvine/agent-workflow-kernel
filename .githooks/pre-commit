@@ -50,6 +50,9 @@ if [ -n "$sh_files" ]; then
 fi
 
 if [ -n "$fmt_files" ]; then
+  # prettier applies .prettierignore even to explicitly passed paths, so a
+  # staged file under an ignored tree (openspec/, ...) is skipped, matching
+  # scripts/checks.sh.
   if require npx "install Node (see .nvmrc) and run 'npm install'"; then
     # shellcheck disable=SC2086 # staged paths have no spaces; word-splitting is intended
     npx prettier --check $fmt_files || fail=1
