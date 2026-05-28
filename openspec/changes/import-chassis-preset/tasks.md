@@ -67,5 +67,5 @@
 
 ## 11. Verification (slice completion gate)
 
-- [ ] 11.1 Run all four slice-2 gates locally: (a) `scripts/check-manifest.sh` passes; (b) `scripts/check-identity-leak.sh` passes; (c) the one-time extraction audit passes (its run output is recorded in the change directory); (d) `npm ci && npm run build` succeeds inside `presets/svelte-faust-synth/`, including the traveling chassis-purity test and the power-off-silence vitest.
+- [x] 11.1 Run all four slice-2 gates locally: (a) `scripts/check-manifest.sh` passes; (b) `scripts/check-identity-leak.sh` passes; (c) the one-time extraction audit passes (its run output is recorded in the change directory); (d) `npm ci && npm run build` succeeds inside `presets/svelte-faust-synth/`, including the traveling chassis-purity test and the power-off-silence vitest.
 - [ ] 11.2 Push the branch; confirm CI: `lint-format` (slice 1), `preset-build`, and `preset-leak-check` are all green; `smoke-app` stub is still present and green.
