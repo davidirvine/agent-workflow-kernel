@@ -1,7 +1,7 @@
 ## 0. Preflight (resolve load-bearing unknowns before scaffolding)
 
 - [x] 0.1 Capture the FAUST pin: per design D10, FAUST is the `@grame/faustwasm` npm package, **not a system tool**. Read synth-d's `main` HEAD `package.json` (resolve the synth-d repo path as `${SYNTHD_REPO:-/Users/dirvine/source/agent-workflow}`) and synth-d's `main` `package-lock.json` to record the declared range and resolved version. Capture the synth-d HEAD SHA used as the source of truth. Reference these in section 3's prerequisite note instead of pinning a separate FAUST version in `STACK.md` (the preset's own `package-lock.json` is the operational pin once task 1.2 lands). No `STACK.md` edit is required by this task; task 10.5 handles the prerequisite documentation.
-- [ ] 0.2 Update `ROADMAP.md` slice 2 to reflect design D11's `mixerPeak` resolution: replace the line that says `mixerPeak` is "not required" with a note that D11 reverses that initial assumption (every DSP exposes the five universal params; the reference instrument exposes `mixerPeak` as constant `0`). Commit as `docs: align ROADMAP slice 2 mixerPeak note with D11`.
+- [x] 0.2 Update `ROADMAP.md` slice 2 to reflect design D11's `mixerPeak` resolution: replace the line that says `mixerPeak` is "not required" with a note that D11 reverses that initial assumption (every DSP exposes the five universal params; the reference instrument exposes `mixerPeak` as constant `0`). Commit as `docs: align ROADMAP slice 2 mixerPeak note with D11`.
 
 ## 1. Preset scaffold (self-contained build unit)
 
