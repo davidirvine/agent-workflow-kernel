@@ -40,7 +40,7 @@
 
 ## 6. Sync manifest
 
-- [ ] 6.1 Write `kernel-manifest.json` at the repo root listing: kernel-tier paths (`scripts/**`, `.githooks/**`, `.github/workflows/**`, `release-please-config.json`, `.release-please-manifest.json`, `CLAUDE.md`, `STACK.md`, `WORKFLOW-NOTES.md`, root `package.json` excluding the lock, `.prettierrc`, `.prettierignore`, `.nvmrc`, `.roborev.toml`) and their specs (`dev-gates`, `release-automation`, `preset-portability`); plus the `svelte-faust-synth` preset group with its chassis paths **including `presets/svelte-faust-synth/package-lock.json`** (so `npm ci` is reproducible downstream) + `chassis-architecture`, `chassis-theming` specs. Match the JSON shape in `design.md` D3.
+- [x] 6.1 Write `kernel-manifest.json` at the repo root listing: kernel-tier paths (`scripts/**`, `.githooks/**`, `.github/workflows/**`, `release-please-config.json`, `.release-please-manifest.json`, `CLAUDE.md`, `STACK.md`, `WORKFLOW-NOTES.md`, root `package.json` excluding the lock, `.prettierrc`, `.prettierignore`, `.nvmrc`, `.roborev.toml`) and their specs (`dev-gates`, `release-automation`, `preset-portability`); plus the `svelte-faust-synth` preset group with its chassis paths **including `presets/svelte-faust-synth/package-lock.json`** (so `npm ci` is reproducible downstream) + `chassis-architecture`, `chassis-theming` specs. Match the JSON shape in `design.md` D3.
 
 ## 7. Identity-leak and manifest-validate scripts
 
