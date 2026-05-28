@@ -7,7 +7,7 @@
 
 - [x] 1.1 Create `presets/svelte-faust-synth/` with its own `package.json` (Svelte/Vite/FAUST-glue runtime + dev deps **including `vitest` for the chassis-purity and power-off-silence tests**; the Svelte plugin lives here, not in the root), `vite.config.js`, `svelte.config.js`, `.prettierrc` (Svelte-aware), and `index.html`. Add `presets/svelte-faust-synth/node_modules/` to the root `.gitignore`.
 - [ ] 1.2 Run `npm install` inside the preset; commit the resulting `package-lock.json` so `npm ci` is reproducible.
-- [ ] 1.3 Add `presets/` to the **root** `.prettierignore` so the root `scripts/checks.sh` does not attempt to format preset files with the root (Svelte-trimmed) prettier config; the preset formats its own files via its own `npm run lint`/`prettier --check` from its Svelte-aware config.
+- [x] 1.3 Add `presets/` to the **root** `.prettierignore` so the root `scripts/checks.sh` does not attempt to format preset files with the root (Svelte-trimmed) prettier config; the preset formats its own files via its own `npm run lint`/`prettier --check` from its Svelte-aware config.
 
 ## 2. Import chassis source from synth-d
 
