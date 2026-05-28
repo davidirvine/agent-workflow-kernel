@@ -22,7 +22,10 @@ require() {
   fi
 }
 
-# Staged, not-deleted files (--diff-filter=d excludes deletions).
+# Staged, not-deleted files. In git's --diff-filter, an UPPERCASE letter
+# selects a status and a lowercase letter excludes it (git-diff: "these
+# upper-case letters can be downcased to exclude"), so lowercase `d` excludes
+# Deleted paths — we must not try to lint a file that no longer exists.
 staged=$(git diff --cached --name-only --diff-filter=d)
 [ -n "$staged" ] || exit 0
 
