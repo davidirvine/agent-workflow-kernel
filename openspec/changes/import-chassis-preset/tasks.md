@@ -45,7 +45,7 @@
 ## 7. Identity-leak and manifest-validate scripts
 
 - [x] 7.1 Add `scripts/check-identity-leak.sh`: scan the curated file set (chassis source, preset configs, `theme.css`, kernel root configs) for `synth-d:`, `davidirvine/synth-d`, and any other declared donor literals; assert none survive. The script's scope list is committed inside it; README/CHANGELOG/historizing files are explicitly excluded. Also assert no un-substituted sentinel matching `__[A-Z_]+__` (e.g. `__APP_NAMESPACE__`) appears **outside the single allowlisted Shell instantiation site** — per D4, the sentinel lives only at the Shell's storage-construction call site, not inside `storage.js` itself; the allowlist names the Shell file explicitly.
-- [ ] 7.2 Add `scripts/check-manifest.sh`: parse `kernel-manifest.json`; for every spec listed, assert its `tier:` frontmatter matches the manifest group; for every kernel-/stack-tier spec under `openspec/specs/`, assert it appears in the manifest; for every non-spec path, assert it exists in the repo.
+- [x] 7.2 Add `scripts/check-manifest.sh`: parse `kernel-manifest.json`; for every spec listed, assert its `tier:` frontmatter matches the manifest group; for every kernel-/stack-tier spec under `openspec/specs/`, assert it appears in the manifest; for every non-spec path, assert it exists in the repo.
 
 ## 8. One-time chassis-purity extraction audit
 
