@@ -14,7 +14,8 @@
       ".prettierrc",
       ".prettierignore",
       ".nvmrc",
-      ".roborev.toml"
+      ".roborev.toml",
+      "openspec/config.yaml"
     ],
     "specs": [
       "openspec/specs/dev-gates/spec.md",

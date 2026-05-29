@@ -12,7 +12,7 @@
 
 ## 2. Extend kernel-manifest and validator
 
-- [ ] 2.1 Add `openspec/config.yaml` to `kernel.paths` (per design D15 — was missing from the manifest, hardcoding it in `new-app.sh` would violate the "manifest is source of truth" principle).
+- [x] 2.1 Add `openspec/config.yaml` to `kernel.paths` (per design D15 — was missing from the manifest, hardcoding it in `new-app.sh` would violate the "manifest is source of truth" principle).
 - [ ] 2.2 Add `kernel.excludeFromGenerate` field listing paths that exist in `kernel.paths` but should NOT travel to a generated app: `.github/workflows/**` (per D14), `scripts/new-app.sh`, `scripts/generate-assert.sh`, `scripts/check-manifest.sh`, `scripts/run-extraction-audit.sh` (kernel-only tools per D2).
 - [ ] 2.3 Add `instrumentStubs` field to `kernel-manifest.json` under `stack.presets["presets/svelte-faust-synth"]`: `{"src/param-schema.js": "stubs/param-schema.js", "src/components/InstrumentPanels.svelte": "stubs/InstrumentPanels.svelte", "faust/synth.dsp": "stubs/synth.dsp"}` (per design D3's FAUST-stub extension, so the generated app's `prebuild` succeeds).
 - [ ] 2.4 Add `appTemplates` field to the same preset entry (per D14): `{".github/workflows/ci.yml": "templates/app-ci.yml"}`.
