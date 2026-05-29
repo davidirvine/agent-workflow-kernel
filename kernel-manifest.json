@@ -85,6 +85,9 @@
         "src/components/InstrumentPanels.svelte": "stubs/InstrumentPanels.svelte",
         "faust/synth.dsp": "stubs/synth.dsp"
       },
+      "appTemplates": {
+        ".github/workflows/ci.yml": "templates/app-ci.yml"
+      },
       "specs": [
         "openspec/specs/chassis-architecture/spec.md",
         "openspec/specs/chassis-theming/spec.md"
