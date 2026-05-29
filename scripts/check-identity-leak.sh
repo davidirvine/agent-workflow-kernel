@@ -27,12 +27,25 @@ cd "$(dirname "$0")/.."
 
 # ─── Scope: files to scan ────────────────────────────────────────────────────
 
-# Curated list of preset chassis directories that get scanned. Each entry is a
-# preset dir; we'll scan its src/ (chassis source) and its top-level config
-# files.
-PRESETS=(
-  "presets/svelte-faust-synth"
-)
+# Layout auto-detection (design D12): the same script runs in two layouts —
+#   * kernel layout: a `presets/` directory with one subdirectory per preset;
+#     each subdir is scanned as a preset (chassis at `<preset>/src/`, configs at
+#     `<preset>/`, Shell allowlist at `<preset>/src/components/Shell.svelte`).
+#   * generated-app layout: the preset has been flattened to the repo root, so
+#     there is no `presets/` directory; treat `.` as the single "preset"
+#     (chassis at `./src/`, configs at `./`, Shell at `./src/components/Shell.svelte`).
+# Detection is one filesystem check — no env var or CLI flag, so the script is
+# invoked identically from the kernel's CI and the generated app's generate-assert.
+PRESETS=()
+if [ -d "presets" ]; then
+  while IFS= read -r d; do
+    PRESETS+=("$d")
+  done < <(find presets -mindepth 1 -maxdepth 1 -type d | sort)
+fi
+if [ "${#PRESETS[@]}" -eq 0 ]; then
+  # No `presets/` with subdirectories → generated-app layout; `.` is the preset.
+  PRESETS=(".")
+fi
 
 # Kernel-root configs.
 KERNEL_ROOT_CONFIGS=(
@@ -103,23 +116,38 @@ print_violation() {
   violations=$((violations + 1))
 }
 
-# Build the full scan list once.
+# Build the full scan list once. Paths are normalized by stripping a leading
+# `./` so that, in the generated-app layout, the preset's configs (emitted by
+# `preset_scan_globs "."` as `./package.json`, `./.prettierrc`, …) collapse onto
+# the identical KERNEL_ROOT_CONFIGS entries (`package.json`, `.prettierrc`, …)
+# and dedup below removes the overlap. In the kernel layout the two sets never
+# overlap (preset configs live under `presets/<preset>/`), so dedup is a no-op.
 scan_files=()
-for cfg in "${KERNEL_ROOT_CONFIGS[@]}"; do
-  if [ -e "$cfg" ]; then
-    scan_files+=("$cfg")
+add_scan_file() {
+  local f="${1#./}"
+  if [ -e "$f" ]; then
+    scan_files+=("$f")
   fi
+}
+for cfg in "${KERNEL_ROOT_CONFIGS[@]}"; do
+  add_scan_file "$cfg"
 done
 for preset in "${PRESETS[@]}"; do
   while IFS= read -r f; do
-    if [ -e "$f" ]; then
-      scan_files+=("$f")
-    fi
+    add_scan_file "$f"
   done < <(preset_scan_globs "$preset")
 done
 
 if [ "${#scan_files[@]}" -eq 0 ]; then
   print_violation "scan list is empty — script scope produced no files"
+else
+  # Dedup the combined list (app layout overlaps preset configs with the
+  # kernel-root configs; without dedup the same file would be double-reported).
+  deduped=()
+  while IFS= read -r f; do
+    deduped+=("$f")
+  done < <(printf '%s\n' "${scan_files[@]}" | awk '!seen[$0]++')
+  scan_files=("${deduped[@]}")
 fi
 
 # Check 1: donor-identity literals.
@@ -139,7 +167,9 @@ done
 allowlist_set=()
 for preset in "${PRESETS[@]}"; do
   while IFS= read -r f; do
-    allowlist_set+=("$f")
+    # Normalize identically to scan_files (strip leading `./`) so the
+    # generated-app Shell path matches its scan-list entry.
+    allowlist_set+=("${f#./}")
   done < <(shell_allowlist_paths "$preset")
 done
 

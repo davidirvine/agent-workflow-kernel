@@ -1,6 +1,6 @@
 ## 0. Slice-2 file refactors (prerequisites for slice 3)
 
-- [ ] 0.1 Refactor `scripts/check-identity-leak.sh` per design D12: auto-detect layout — if `presets/` exists with subdirectories, iterate them (current kernel behaviour); else treat `.` as the single "preset". Update `preset_scan_globs` and `shell_allowlist_paths` so they handle a preset path of `"."` correctly (chassis at `./src/`, Shell allowlist at `./src/components/Shell.svelte`). Verify the kernel's `scripts/check-identity-leak.sh` still passes (kernel branch unchanged); the generated-app branch will be verified by `generate-assert.sh` (task 5.x).
+- [x] 0.1 Refactor `scripts/check-identity-leak.sh` per design D12: auto-detect layout — if `presets/` exists with subdirectories, iterate them (current kernel behaviour); else treat `.` as the single "preset". Update `preset_scan_globs` and `shell_allowlist_paths` so they handle a preset path of `"."` correctly (chassis at `./src/`, Shell allowlist at `./src/components/Shell.svelte`). Verify the kernel's `scripts/check-identity-leak.sh` still passes (kernel branch unchanged); the generated-app branch will be verified by `generate-assert.sh` (task 5.x).
 
 ## 1. Instrument-tier stubs
 
