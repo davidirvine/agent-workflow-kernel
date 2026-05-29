@@ -17,6 +17,13 @@
       ".roborev.toml",
       "openspec/config.yaml"
     ],
+    "excludeFromGenerate": [
+      ".github/workflows/**",
+      "scripts/new-app.sh",
+      "scripts/generate-assert.sh",
+      "scripts/check-manifest.sh",
+      "scripts/run-extraction-audit.sh"
+    ],
     "specs": [
       "openspec/specs/dev-gates/spec.md",
       "openspec/specs/release-automation/spec.md",
