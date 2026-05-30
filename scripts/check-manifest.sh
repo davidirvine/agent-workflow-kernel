@@ -162,6 +162,11 @@ done
 # This is the shared primitive both checks need — `kernel.paths` is glob-based,
 # so the exclusion and overlap checks must compare against the EXPANDED file
 # set, not the literal manifest entries (design D2).
+#
+# CANONICAL COPY. The same helper is duplicated in scripts/new-app.sh and
+# scripts/generate-assert.sh (kernel-only scripts that cannot source a shared
+# lib without it travelling into generated apps). Keep all three in sync — a
+# fix here must be mirrored there.
 expand_entry() {
   local p="$1"
   case "$p" in

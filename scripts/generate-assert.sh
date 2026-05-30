@@ -35,7 +35,11 @@ note() {
   problems=$((problems + 1))
 }
 
-# ─── Helpers (mirror new-app.sh / check-manifest.sh) ────────────────────────
+# ─── Helpers ────────────────────────────────────────────────────────────────
+# expand_entry is a DUPLICATE of the canonical copy in scripts/check-manifest.sh
+# (also duplicated in scripts/new-app.sh) — these are kernel-only scripts that
+# cannot source a shared lib without it travelling into generated apps. Keep all
+# three in sync.
 expand_entry() {
   local p="$1"
   case "$p" in
@@ -158,15 +162,17 @@ case "$pkg_desc" in
 *droning* | *"Reference preset"*) note "package.json description retains the preset's reference-instrument phrasing: $pkg_desc" ;;
 esac
 
+# Fixed-string greps (-F): the patterns contain regex metacharacters (., (, ),
+# /) that must match literally.
 SHELL_FILE="$APP/src/components/Shell.svelte"
-grep -q "'$NAME'" "$SHELL_FILE" || note "Shell.svelte does not contain the substituted namespace '$NAME'"
-grep -q "'__APP_NAMESPACE__'" "$SHELL_FILE" && note "Shell.svelte still contains the '__APP_NAMESPACE__' literal"
+grep -Fq "'$NAME'" "$SHELL_FILE" || note "Shell.svelte does not contain the substituted namespace '$NAME'"
+grep -Fq "'__APP_NAMESPACE__'" "$SHELL_FILE" && note "Shell.svelte still contains the '__APP_NAMESPACE__' literal"
 
 VITE_FILE="$APP/vite.config.js"
-grep -q "JSON.stringify(\"$TITLE\")" "$VITE_FILE" || note "vite.config.js missing the substituted title \"$TITLE\""
-grep -q "JSON.stringify(\"$REPO_URL\")" "$VITE_FILE" || note "vite.config.js missing the substituted repo URL"
-grep -q "JSON.stringify('svelte-faust-synth')" "$VITE_FILE" && note "vite.config.js still carries the preset title placeholder"
-grep -q "github.com/davidirvine/agent-workflow-kernel" "$VITE_FILE" && note "vite.config.js still carries the preset repo-URL placeholder"
+grep -Fq "JSON.stringify(\"$TITLE\")" "$VITE_FILE" || note "vite.config.js missing the substituted title \"$TITLE\""
+grep -Fq "JSON.stringify(\"$REPO_URL\")" "$VITE_FILE" || note "vite.config.js missing the substituted repo URL"
+grep -Fq "JSON.stringify('svelte-faust-synth')" "$VITE_FILE" && note "vite.config.js still carries the preset title placeholder"
+grep -Fq "github.com/davidirvine/agent-workflow-kernel" "$VITE_FILE" && note "vite.config.js still carries the preset repo-URL placeholder"
 
 # ─── (5.5) The emitted tree's own identity-leak check passes ────────────────
 if ! (cd "$APP" && scripts/check-identity-leak.sh >"$TMP/leak.log" 2>&1); then

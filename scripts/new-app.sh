@@ -127,7 +127,10 @@ mkdir -p "$OUTPUT_ABS"
 
 # Expand a manifest path entry into the set of on-disk files it covers, one per
 # line: `dir/**` → recursive find; other globs → nullglob+globstar; literals →
-# themselves if present. Mirrors check-manifest.sh's expand_entry.
+# themselves if present. DUPLICATE of the canonical copy in
+# scripts/check-manifest.sh (also duplicated in scripts/generate-assert.sh) —
+# these are kernel-only scripts that cannot source a shared lib without it
+# travelling into generated apps. Keep all three in sync.
 expand_entry() {
   local p="$1"
   case "$p" in
@@ -247,13 +250,19 @@ if [ ! -f "$SHELL_FILE" ]; then
   exit 1
 fi
 tmp_shell="$(mktemp)"
-sed "s/'__APP_NAMESPACE__'/'$NAME'/g" "$SHELL_FILE" >"$tmp_shell"
+# Clean up the temp file even if sed fails under set -e (otherwise it orphans
+# in $TMPDIR); on success the mv consumes it.
+if ! sed "s/'__APP_NAMESPACE__'/'$NAME'/g" "$SHELL_FILE" >"$tmp_shell"; then
+  rm -f "$tmp_shell"
+  echo "new-app.sh: namespace substitution (sed) failed for $SHELL_FILE" >&2
+  exit 1
+fi
 mv "$tmp_shell" "$SHELL_FILE"
 # Assert the string-LITERAL sites were replaced. A bare `__APP_NAMESPACE__`
 # token may still appear in a code comment (it is not a substitution target and
 # is allowlisted by check-identity-leak, which exempts Shell.svelte); only the
-# quoted form is the namespace seam.
-if grep -q "'__APP_NAMESPACE__'" "$SHELL_FILE"; then
+# quoted form is the namespace seam. -F: match the literal, not as a regex.
+if grep -Fq "'__APP_NAMESPACE__'" "$SHELL_FILE"; then
   echo "new-app.sh: '__APP_NAMESPACE__' literal still present in $SHELL_FILE after substitution" >&2
   exit 1
 fi
