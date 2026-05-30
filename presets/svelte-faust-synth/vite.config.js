@@ -46,7 +46,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test-setup.js'],
-    include: ['src/**/*.test.js'],
+    // `stubs/**` carries the generator's instrument stubs and their guard test
+    // (stubs/stubs.test.js). The stubs directory exists only in the kernel
+    // preset — a generated app has no `stubs/`, so this glob matches nothing
+    // there and is harmless.
+    include: ['src/**/*.test.js', 'stubs/**/*.test.js'],
     passWithNoTests: true,
   },
 })

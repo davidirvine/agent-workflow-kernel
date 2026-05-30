@@ -1,0 +1,67 @@
+# App-tier CI for an app generated from agent-workflow-kernel + svelte-faust-synth.
+#
+# new-app.sh writes this file into a generated app at .github/workflows/ci.yml.
+# The kernel's own CI (preset-build, preset-leak-check, generate-assert) is
+# kernel-only and excluded from generation — this template runs the gates that
+# make sense for a flattened app: the shared lint/format checks plus the app's
+# own test + build. FAUST ships as the @grame/faustwasm npm dep, so `npm ci`
+# provisions it; no separate FAUST install is needed.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-format:
+    name: lint / format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # shfmt is not preinstalled on ubuntu-latest (shellcheck is). Pin the
+      # exact version scripts/checks.sh expects so CI and local formatting stay
+      # deterministic, and verify the download.
+      - name: Install shfmt v3.8.0
+        env:
+          SHFMT_SHA256: 27b3c6f9d9592fc5b4856c341d1ff2c88856709b9e76469313642a1d7b558fe0
+        run: |
+          curl -fsSL -o shfmt https://github.com/mvdan/sh/releases/download/v3.8.0/shfmt_v3.8.0_linux_amd64
+          echo "${SHFMT_SHA256}  shfmt" | sha256sum -c -
+          chmod +x shfmt
+          sudo mv shfmt /usr/local/bin/shfmt
+          shfmt --version
+
+      - run: npm ci
+
+      - name: Run shared checks (parity with pre-push)
+        run: scripts/checks.sh
+
+  build:
+    name: test / build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Build (FAUST prebuild + Vite)
+        run: npm run build

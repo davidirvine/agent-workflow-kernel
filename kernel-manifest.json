@@ -14,7 +14,15 @@
       ".prettierrc",
       ".prettierignore",
       ".nvmrc",
-      ".roborev.toml"
+      ".roborev.toml",
+      "openspec/config.yaml"
+    ],
+    "excludeFromGenerate": [
+      ".github/workflows/**",
+      "scripts/new-app.sh",
+      "scripts/generate-assert.sh",
+      "scripts/check-manifest.sh",
+      "scripts/run-extraction-audit.sh"
     ],
     "specs": [
       "openspec/specs/dev-gates/spec.md",
@@ -72,6 +80,14 @@
         "presets/svelte-faust-synth/src/state/synth.svelte.js",
         "presets/svelte-faust-synth/src/state/synth.test.js"
       ],
+      "instrumentStubs": {
+        "src/param-schema.js": "stubs/param-schema.js",
+        "src/components/InstrumentPanels.svelte": "stubs/InstrumentPanels.svelte",
+        "faust/synth.dsp": "stubs/synth.dsp"
+      },
+      "appTemplates": {
+        ".github/workflows/ci.yml": "templates/app-ci.yml"
+      },
       "specs": [
         "openspec/specs/chassis-architecture/spec.md",
         "openspec/specs/chassis-theming/spec.md"

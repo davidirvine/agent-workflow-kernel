@@ -66,6 +66,12 @@ slice 1's `lint-format`:
 - `preset-leak-check` (CI): `scripts/check-manifest.sh` and
   `scripts/check-identity-leak.sh`. Both runnable locally with the same
   command.
+- `generate-assert` (CI): `scripts/generate-assert.sh` — runs `new-app.sh`
+  into a tempdir and asserts the emitted tree structurally and by identity,
+  then runs the emitted app's own `check-identity-leak.sh`. Runnable locally
+  with the same command; it tears its tempdir down on success and leaves it
+  for inspection on failure. Needs Node (for the generator's `node -e` edits),
+  `jq`, and `git`.
 - The one-time extraction audit (`scripts/run-extraction-audit.sh`) ran
   during this slice's implementation; its evidence is preserved in
   `openspec/changes/import-chassis-preset/audit/`. Future slices do not
@@ -81,4 +87,30 @@ section:
 - `shellcheck`/`shfmt` clean on all scripts.
 - `preset-build` green locally and in CI.
 - `preset-leak-check` green locally and in CI (both scripts exit 0).
+- `generate-assert` green locally and in CI (`scripts/generate-assert.sh`
+  exits 0 and removes its tempdir).
 - pre-push hooks run the same checks as the kernel CI's `lint-format` job.
+
+## Using new-app.sh
+
+`scripts/new-app.sh` emits a fresh app from the kernel + a preset. It reads
+`kernel-manifest.json` for what travels, writes the preset's instrument stubs,
+substitutes donor identity, resets the version to `0.1.0`, empties
+`openspec/changes/` to a `.gitkeep`, and runs `git init` + one chore commit.
+
+```
+scripts/new-app.sh \
+  --name <app-name>      # required; kebab-case ^[a-z][a-z0-9-]*$ (npm name + localStorage namespace)
+  --output <path>        # required; refused if it already exists
+  [--preset <name>]      # default: svelte-faust-synth
+  [--title <title>]      # default: title-cased --name
+  [--repo-url <url>]     # default: https://example.com/<name>
+```
+
+After generation, run `npm install` in the new app once to regenerate
+`package-lock.json` (the generator leaves it intentionally stale) and to
+activate the git hooks via `postinstall`. `npm run build` then works without a
+separate FAUST install — the `prebuild` step compiles the DSP via the
+`@grame/faustwasm` npm dependency (design D10), not a system FAUST compiler.
+The instrument starts as a silent stub DSP until you fill in
+`faust/synth.dsp` and `src/param-schema.js`.
