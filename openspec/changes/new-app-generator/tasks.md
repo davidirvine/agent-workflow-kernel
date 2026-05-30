@@ -21,7 +21,7 @@
 
 ## 3. Sync `preset-portability` spec update (early-sync per slice 2's D9)
 
-- [ ] 3.1 Sync the `preset-portability` delta from this change into `openspec/specs/preset-portability/spec.md` during implementation (same pattern slice 2 established): add the new "instrument-tier stub mapping" requirement and its two scenarios to the canonical spec, preserving the existing Purpose section and other requirements unchanged. Archive-time sync will be a no-op refresh.
+- [x] 3.1 Sync the `preset-portability` delta from this change into `openspec/specs/preset-portability/spec.md` during implementation (same pattern slice 2 established): add the new "instrument-tier stub mapping" requirement and its two scenarios to the canonical spec, preserving the existing Purpose section and other requirements unchanged. Archive-time sync will be a no-op refresh.
 
 ## 4. Write `scripts/new-app.sh`
 
