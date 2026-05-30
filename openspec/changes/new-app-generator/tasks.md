@@ -57,5 +57,5 @@
 
 ## 8. Verification (slice completion gate)
 
-- [ ] 8.1 Run `scripts/generate-assert.sh` clean locally; verify the script tears down its tempdir on success and leaves it on failure.
+- [x] 8.1 Run `scripts/generate-assert.sh` clean locally; verify the script tears down its tempdir on success and leaves it on failure.
 - [ ] 8.2 Push the branch; confirm CI: the `generate-assert` job is green alongside the slice-1 and slice-2 jobs; `smoke-app` stub is still present and green.
