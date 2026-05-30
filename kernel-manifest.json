@@ -27,7 +27,8 @@
     "specs": [
       "openspec/specs/dev-gates/spec.md",
       "openspec/specs/release-automation/spec.md",
-      "openspec/specs/preset-portability/spec.md"
+      "openspec/specs/preset-portability/spec.md",
+      "openspec/specs/app-generation/spec.md"
     ]
   },
   "stack": {
