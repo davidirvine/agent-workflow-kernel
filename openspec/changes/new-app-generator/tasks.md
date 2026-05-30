@@ -53,7 +53,7 @@
 
 ## 7. STACK.md update
 
-- [ ] 7.1 Update `STACK.md`'s "Completion-gate test commands" and "Feature-level verification" sections to list `generate-assert` alongside `preset-build` and `preset-leak-check`. Add a short "Using new-app.sh" subsection documenting the CLI surface (per design D1).
+- [x] 7.1 Update `STACK.md`'s "Completion-gate test commands" and "Feature-level verification" sections to list `generate-assert` alongside `preset-build` and `preset-leak-check`. Add a short "Using new-app.sh" subsection documenting the CLI surface (per design D1).
 
 ## 8. Verification (slice completion gate)
 
