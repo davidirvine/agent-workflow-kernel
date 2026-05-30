@@ -39,13 +39,13 @@
 
 ## 5. Write `scripts/generate-assert.sh`
 
-- [ ] 5.1 Create a tempdir (using `mktemp -d`); set up an EXIT trap to remove it on success and on early failure.
-- [ ] 5.2 Run `new-app.sh --name smoke-app --output <tempdir>/smoke-app --preset svelte-faust-synth --title "Smoke App" --repo-url "https://example.com/smoke-app"`. Capture stderr/stdout; abort with a clear message if the generator exits non-zero.
-- [ ] 5.3 Structural assertions (per design D8): every manifest path (`kernel.paths` minus `excludeFromGenerate`, plus the preset's `paths` flattened) exists in the emitted tree at the right relative path; every spec listed in `kernel.specs` and the preset's `specs` exists at `openspec/specs/<cap>/spec.md` in the emitted tree; every `instrumentStubs` target exists; every `appTemplates` target exists; `openspec/changes/` contains exactly one file (`.gitkeep`); `openspec/changes/archive/` does not exist; the emitted dir is a git repo with one commit whose message starts with `chore: scaffold smoke-app`.
-- [ ] 5.4 Identity assertions: `package.json` `name === "smoke-app"`, `version === "0.1.0"`, `description` does not contain the preset's reference-instrument phrasing; `Shell.svelte` contains `'smoke-app'` not `'__APP_NAMESPACE__'`; `vite.config.js` carries the chosen title + repo-url values, not the preset's placeholders.
-- [ ] 5.5 Run the emitted tree's own `scripts/check-identity-leak.sh` from inside `<tempdir>/smoke-app`; assert it exits 0.
-- [ ] 5.6 On success, tear down the tempdir and emit a single-line summary; on failure, leave the tempdir in place with a message pointing the user to it for inspection (override the EXIT trap before exiting).
-- [ ] 5.7 Make `shfmt -w` / `shellcheck`-clean.
+- [x] 5.1 Create a tempdir (using `mktemp -d`); set up an EXIT trap to remove it on success and on early failure.
+- [x] 5.2 Run `new-app.sh --name smoke-app --output <tempdir>/smoke-app --preset svelte-faust-synth --title "Smoke App" --repo-url "https://example.com/smoke-app"`. Capture stderr/stdout; abort with a clear message if the generator exits non-zero.
+- [x] 5.3 Structural assertions (per design D8): every manifest path (`kernel.paths` minus `excludeFromGenerate`, plus the preset's `paths` flattened) exists in the emitted tree at the right relative path; every spec listed in `kernel.specs` and the preset's `specs` exists at `openspec/specs/<cap>/spec.md` in the emitted tree; every `instrumentStubs` target exists; every `appTemplates` target exists; `openspec/changes/` contains exactly one file (`.gitkeep`); `openspec/changes/archive/` does not exist; the emitted dir is a git repo with one commit whose message starts with `chore: scaffold smoke-app`.
+- [x] 5.4 Identity assertions: `package.json` `name === "smoke-app"`, `version === "0.1.0"`, `description` does not contain the preset's reference-instrument phrasing; `Shell.svelte` contains `'smoke-app'` not `'__APP_NAMESPACE__'`; `vite.config.js` carries the chosen title + repo-url values, not the preset's placeholders.
+- [x] 5.5 Run the emitted tree's own `scripts/check-identity-leak.sh` from inside `<tempdir>/smoke-app`; assert it exits 0.
+- [x] 5.6 On success, tear down the tempdir and emit a single-line summary; on failure, leave the tempdir in place with a message pointing the user to it for inspection (override the EXIT trap before exiting).
+- [x] 5.7 Make `shfmt -w` / `shellcheck`-clean.
 
 ## 6. CI workflow
 
