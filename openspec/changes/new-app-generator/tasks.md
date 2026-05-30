@@ -49,7 +49,7 @@
 
 ## 6. CI workflow
 
-- [ ] 6.1 Add a `generate-assert` job to `.github/workflows/ci.yml` that runs `scripts/generate-assert.sh`. Node from `.nvmrc` (used by the `node -e` calls inside the generator); no FAUST install needed for slice 3 (the emitted app is not built here — that's slice 5).
+- [x] 6.1 Add a `generate-assert` job to `.github/workflows/ci.yml` that runs `scripts/generate-assert.sh`. Node from `.nvmrc` (used by the `node -e` calls inside the generator); no FAUST install needed for slice 3 (the emitted app is not built here — that's slice 5).
 
 ## 7. STACK.md update
 

@@ -96,6 +96,25 @@ jobs:
       - name: Power-off-silence vitest
         run: npx vitest run src/power-off-silence.test.js
 
+  # Slice-3 gate (design D9): run new-app.sh into a tempdir and assert the
+  # emitted tree structurally + by identity (scripts/generate-assert.sh). Node
+  # from .nvmrc is needed for the generator's `node -e` JSON edits; jq and git
+  # are preinstalled on ubuntu-latest, and generate-assert provides a headless
+  # git identity for the scaffold commit. No FAUST and no app build here — the
+  # emitted app is only built in slice 5's smoke-app.
+  generate-assert:
+    name: generate-assert
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Generate an app and assert the emitted tree
+        run: scripts/generate-assert.sh
+
   # Pending stub (D4): present and green from day one so the harness slot
   # exists in every CI run. Slices 3-5 fill in real pipeline stages by
   # editing this one job rather than adding new ones. Slice 2 deliberately
