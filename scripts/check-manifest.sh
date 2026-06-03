@@ -236,6 +236,62 @@ for e in "${exclude_entries[@]}"; do
   fi
 done
 
+# ─── Check 6: appStateFiles are literal, non-colliding sync-state paths ──────
+#
+# (design D8 / preset-portability "appStateFiles" requirement) Each entry is a
+# file sync-kernel.sh (and new-app.sh) writes into the consuming app to record
+# its sync state. They originate in the app from sync — NOT copied from the
+# kernel — so each must be a non-empty literal path that does not collide with
+# anything the kernel/preset copies; otherwise sync would treat its own state
+# file as a synced (clobber-protected) file.
+app_state_files=()
+while IFS= read -r line; do
+  [ -n "$line" ] && app_state_files+=("$line")
+done < <(manifest_app_state_files)
+
+if [ "${#app_state_files[@]}" -eq 0 ]; then
+  print_violation "kernel.appStateFiles is absent or empty (must declare .kernel-version and .kernel-sync-hashes.json)"
+else
+  # The two entries the spec mandates are present.
+  for required in ".kernel-version" ".kernel-sync-hashes.json"; do
+    found=0
+    for asf in "${app_state_files[@]}"; do
+      [ "$asf" = "$required" ] && found=1 && break
+    done
+    [ "$found" -eq 1 ] || print_violation "kernel.appStateFiles is missing the required entry '$required'"
+  done
+
+  # Union of every COPIED target path: expanded kernel.paths (kernel_files, from
+  # Check 5), each preset's flattened expanded paths, and each preset's
+  # instrumentStubs / appTemplates target keys.
+  copied_targets="$kernel_files"
+  for key in "${preset_keys[@]}"; do
+    while IFS= read -r entry; do
+      [ -n "$entry" ] || continue
+      while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        copied_targets+=$'\n'"${f#"$key"/}"
+      done < <(expand_entry "$entry")
+    done < <(manifest_preset_paths "$key")
+    while IFS=$'\t' read -r target _source; do
+      [ -n "$target" ] && copied_targets+=$'\n'"$target"
+    done < <(manifest_preset_instrument_stubs "$key")
+    while IFS=$'\t' read -r target _source; do
+      [ -n "$target" ] && copied_targets+=$'\n'"$target"
+    done < <(manifest_preset_app_templates "$key")
+  done
+
+  for asf in "${app_state_files[@]}"; do
+    # Literal path: reject glob metacharacters (these are written verbatim).
+    case "$asf" in
+    *[*?[]*) print_violation "appStateFiles entry '$asf' must be a literal path (no glob metacharacters)" ;;
+    esac
+    if printf '%s\n' "$copied_targets" | grep -Fxq -- "$asf"; then
+      print_violation "appStateFiles entry '$asf' collides with a kernel/preset copied path — sync would treat its own state file as a synced file"
+    fi
+  done
+fi
+
 # ─── Result ────────────────────────────────────────────────────────────────
 
 total_specs=$((${#kernel_specs[@]} + ${#stack_specs[@]}))

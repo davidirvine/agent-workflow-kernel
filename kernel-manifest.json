@@ -29,7 +29,8 @@
       "openspec/specs/release-automation/spec.md",
       "openspec/specs/preset-portability/spec.md",
       "openspec/specs/app-generation/spec.md"
-    ]
+    ],
+    "appStateFiles": [".kernel-version", ".kernel-sync-hashes.json"]
   },
   "stack": {
     "presets/svelte-faust-synth": {
