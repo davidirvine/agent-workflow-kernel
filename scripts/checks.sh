@@ -31,8 +31,11 @@ require() {
 sh_files=$(git ls-files '*.sh' '.githooks/*')
 if [ -n "$sh_files" ]; then
   if require shellcheck "install ShellCheck (brew install shellcheck / apt-get install shellcheck)"; then
+    # -x: follow `source`d files (e.g. scripts/lib/manifest.sh) so a script that
+    # sources the shared lib is checked against the lib's real definitions rather
+    # than flagged SC1091. Each consumer carries a `# shellcheck source=` hint.
     # shellcheck disable=SC2086 # tracked paths have no spaces; word-splitting is intended
-    shellcheck $sh_files || fail=1
+    shellcheck -x $sh_files || fail=1
   fi
   if require shfmt "install shfmt ${SHFMT_VERSION} (https://github.com/mvdan/sh/releases)"; then
     # shellcheck disable=SC2086 # tracked paths have no spaces; word-splitting is intended
