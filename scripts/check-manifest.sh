@@ -13,13 +13,18 @@
 
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
 
 MANIFEST="kernel-manifest.json"
 if [ ! -f "$MANIFEST" ]; then
   echo "check-manifest: $MANIFEST not found" >&2
   exit 1
 fi
+
+# Shared manifest primitives (design D6): expand_entry + the manifest_* helpers.
+# shellcheck source=scripts/lib/manifest.sh
+. "$SCRIPT_DIR/lib/manifest.sh"
 
 violations=0
 print_violation() {
@@ -48,7 +53,7 @@ spec_tier() {
 
 # Manifest spec lists, per group.
 kernel_specs=()
-while IFS= read -r line; do kernel_specs+=("$line"); done < <(jq -r '.kernel.specs[]' "$MANIFEST")
+while IFS= read -r line; do kernel_specs+=("$line"); done < <(manifest_kernel_specs)
 stack_specs=()
 while IFS= read -r line; do stack_specs+=("$line"); done < <(jq -r '[.stack[].specs[]] | .[]' "$MANIFEST")
 
@@ -117,7 +122,7 @@ done
 # ─── Check 3: non-spec paths exist ────────────────────────────────────────
 
 kernel_paths=()
-while IFS= read -r line; do kernel_paths+=("$line"); done < <(jq -r '.kernel.paths[]' "$MANIFEST")
+while IFS= read -r line; do kernel_paths+=("$line"); done < <(manifest_kernel_paths)
 stack_paths=()
 while IFS= read -r line; do stack_paths+=("$line"); done < <(jq -r '[.stack[].paths[]] | .[]' "$MANIFEST")
 
@@ -156,48 +161,9 @@ done
 
 # ─── Check 4+5: generation fields (instrumentStubs, appTemplates, exclude) ──
 #
-# Expand a manifest path entry into the set of on-disk files it covers, one per
-# line: `dir/**` globs become `find dir -type f` (recursive); other globs use
-# nullglob+globstar expansion; literal paths emit themselves only if present.
-# This is the shared primitive both checks need — `kernel.paths` is glob-based,
-# so the exclusion and overlap checks must compare against the EXPANDED file
-# set, not the literal manifest entries (design D2).
-#
-# CANONICAL COPY. The same helper is duplicated in scripts/new-app.sh and
-# scripts/generate-assert.sh (kernel-only scripts that cannot source a shared
-# lib without it travelling into generated apps). Keep all three in sync — a
-# fix here must be mirrored there.
-expand_entry() {
-  local p="$1"
-  case "$p" in
-  */'**')
-    if [ -d "${p%/**}" ]; then
-      find "${p%/**}" -type f
-    fi
-    ;;
-  *[*?[]*)
-    shopt -s nullglob globstar
-    # shellcheck disable=SC2206
-    # (intentional: $p IS a glob; word-splitting the unquoted expansion is the
-    # wildcard match)
-    local matches=($p)
-    shopt -u nullglob globstar
-    if [ "${#matches[@]}" -gt 0 ]; then
-      local m
-      for m in "${matches[@]}"; do
-        [ -f "$m" ] && printf '%s\n' "$m"
-      done
-    fi
-    ;;
-  *)
-    [ -e "$p" ] && printf '%s\n' "$p"
-    ;;
-  esac
-  # Always succeed: an absent literal (the `[ -e ]` test above failing) must not
-  # propagate a non-zero status out of the command substitutions that call this,
-  # or `set -e`/`pipefail` would abort the whole check.
-  return 0
-}
+# expand_entry (the shared primitive that expands a glob-based manifest entry
+# into its on-disk file set) and the manifest_* query helpers come from
+# scripts/lib/manifest.sh, sourced above (design D6).
 
 # Check 4: per-preset instrumentStubs + appTemplates. Each field maps a target
 # path (relative to the generated app root) to a committed source inside the
@@ -205,13 +171,13 @@ expand_entry() {
 # own (flattened, glob-expanded) paths — a collision would mean the generator
 # writes a stub/template then overwrites it with a preset file (design D3/D14).
 preset_keys=()
-while IFS= read -r line; do preset_keys+=("$line"); done < <(jq -r '.stack | keys[]' "$MANIFEST")
+while IFS= read -r line; do preset_keys+=("$line"); done < <(manifest_preset_keys)
 
 for key in "${preset_keys[@]}"; do
   preset_path_entries=()
   while IFS= read -r line; do
     preset_path_entries+=("$line")
-  done < <(jq -r --arg k "$key" '.stack[$k].paths[]' "$MANIFEST")
+  done < <(manifest_preset_paths "$key")
 
   # Flattened (preset-prefix-stripped), glob-expanded app-relative path set.
   preset_files_flat=""
@@ -249,7 +215,7 @@ fi
 exclude_entries=()
 while IFS= read -r line; do
   exclude_entries+=("$line")
-done < <(jq -r '.kernel.excludeFromGenerate // [] | .[]' "$MANIFEST")
+done < <(manifest_kernel_excludes)
 
 for e in "${exclude_entries[@]}"; do
   e_files=$(expand_entry "$e" | sort -u)
