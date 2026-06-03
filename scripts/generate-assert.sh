@@ -14,6 +14,10 @@ KERNEL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$KERNEL_ROOT"
 MANIFEST="kernel-manifest.json"
 
+# Shared manifest primitives (design D6): expand_entry + the manifest_* helpers.
+# shellcheck source=scripts/lib/manifest.sh
+. "$SCRIPT_DIR/lib/manifest.sh"
+
 PRESET="svelte-faust-synth"
 PRESET_KEY="presets/$PRESET"
 NAME="smoke-app"
@@ -35,33 +39,8 @@ note() {
   problems=$((problems + 1))
 }
 
-# ─── Helpers ────────────────────────────────────────────────────────────────
-# expand_entry is a DUPLICATE of the canonical copy in scripts/check-manifest.sh
-# (also duplicated in scripts/new-app.sh) — these are kernel-only scripts that
-# cannot source a shared lib without it travelling into generated apps. Keep all
-# three in sync.
-expand_entry() {
-  local p="$1"
-  case "$p" in
-  */'**')
-    if [ -d "${p%/**}" ]; then find "${p%/**}" -type f; fi
-    ;;
-  *[*?[]*)
-    shopt -s nullglob globstar
-    # shellcheck disable=SC2206
-    local matches=($p)
-    shopt -u nullglob globstar
-    if [ "${#matches[@]}" -gt 0 ]; then
-      local m
-      for m in "${matches[@]}"; do [ -f "$m" ] && printf '%s\n' "$m"; done
-    fi
-    ;;
-  *)
-    [ -e "$p" ] && printf '%s\n' "$p"
-    ;;
-  esac
-  return 0
-}
+# expand_entry and the manifest_* helpers come from scripts/lib/manifest.sh,
+# sourced above (design D6).
 
 # ─── (5.2) Run the generator ────────────────────────────────────────────────
 # Provide a git identity for headless/CI runs; new-app.sh deliberately
@@ -88,7 +67,7 @@ fi
 # (.prettierrc, package.json) are present too — supplied by the preset.
 exclude_files=""
 exclude_entries=()
-while IFS= read -r line; do exclude_entries+=("$line"); done < <(jq -r '.kernel.excludeFromGenerate // [] | .[]' "$MANIFEST")
+while IFS= read -r line; do exclude_entries+=("$line"); done < <(manifest_kernel_excludes)
 if [ "${#exclude_entries[@]}" -gt 0 ]; then
   exclude_files=$(for e in "${exclude_entries[@]}"; do expand_entry "$e"; done | sort -u)
 fi
@@ -103,7 +82,7 @@ while IFS= read -r entry; do
     if is_excluded "$f"; then continue; fi
     [ -e "$APP/$f" ] || note "missing kernel-tier path: $f"
   done < <(expand_entry "$entry")
-done < <(jq -r '.kernel.paths[]' "$MANIFEST")
+done < <(manifest_kernel_paths)
 
 # Preset-tier files present (flattened: presets/<preset>/ prefix stripped).
 while IFS= read -r entry; do
@@ -112,23 +91,27 @@ while IFS= read -r entry; do
     rel="${f#"$PRESET_KEY"/}"
     [ -e "$APP/$rel" ] || note "missing preset-tier path: $rel"
   done < <(expand_entry "$entry")
-done < <(jq -r --arg k "$PRESET_KEY" '.stack[$k].paths[]' "$MANIFEST")
+done < <(manifest_preset_paths "$PRESET_KEY")
 
-# Specs present at their verbatim paths.
+# Specs present at their verbatim paths. Process substitution (not a pipe) so
+# the loop body's note()/problems mutations stay in the current shell.
 while IFS= read -r s; do
   [ -z "$s" ] && continue
   [ -f "$APP/$s" ] || note "missing spec: $s"
-done < <(jq -r --arg k "$PRESET_KEY" '(.kernel.specs // []) + (.stack[$k].specs // []) | .[]' "$MANIFEST")
+done < <(
+  manifest_kernel_specs
+  manifest_preset_specs "$PRESET_KEY"
+)
 
-# instrumentStubs + appTemplates targets present.
-while IFS= read -r target; do
+# instrumentStubs + appTemplates targets present (helpers emit "<target>\t<source>").
+while IFS=$'\t' read -r target _source; do
   [ -z "$target" ] && continue
   [ -e "$APP/$target" ] || note "missing instrumentStubs target: $target"
-done < <(jq -r --arg k "$PRESET_KEY" '.stack[$k].instrumentStubs // {} | keys[]' "$MANIFEST")
-while IFS= read -r target; do
+done < <(manifest_preset_instrument_stubs "$PRESET_KEY")
+while IFS=$'\t' read -r target _source; do
   [ -z "$target" ] && continue
   [ -e "$APP/$target" ] || note "missing appTemplates target: $target"
-done < <(jq -r --arg k "$PRESET_KEY" '.stack[$k].appTemplates // {} | keys[]' "$MANIFEST")
+done < <(manifest_preset_app_templates "$PRESET_KEY")
 
 # openspec/changes/ contains exactly one file (.gitkeep); no archive/.
 changes_count=$(find "$APP/openspec/changes" -type f 2>/dev/null | wc -l | tr -d ' ')
