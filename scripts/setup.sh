@@ -71,7 +71,11 @@ if [ "$MODE" = "check" ]; then
     fails=$((fails + 1))
   }
 
-  # node, pinned to .nvmrc (compare the components .nvmrc specifies).
+  # node, pinned to .nvmrc. The match is a component-prefix: ".nvmrc" of "22"
+  # accepts any "22.x.y"; "22.5" accepts any "22.5.z". This is intentional —
+  # the kernel pins to a major (or major.minor) line. If a future .nvmrc pins a
+  # full "major.minor.patch", the same prefix rule still requires an exact match
+  # (there are no further components to wildcard), so a patch mismatch is caught.
   if ! command -v node >/dev/null 2>&1; then
     report "node" "install via nvm: nvm install \$(cat .nvmrc)"
   elif [ -f ".nvmrc" ]; then

@@ -206,3 +206,26 @@ sha256_file() {
     return 1
   fi
 }
+
+# ─── write_hash_file <out-path> <synced-at-version> (D2) ─────────────────────
+# Assemble a .kernel-sync-hashes.json at <out-path> from "<target>\t<sha256hex>"
+# lines read on STDIN, with syncedAt=<version>. Shared by new-app.sh (generation
+# baseline) and sync-kernel.sh (adopt + post-write) so the JSON shape has one
+# definition. Reading STDIN means neither caller needs a temp file (and thus no
+# cleanup trap). Mirrors new-app.sh's node -e JSON pattern.
+write_hash_file() {
+  local out="$1" version="$2"
+  node -e '
+    const fs = require("fs");
+    const [version, outPath] = process.argv.slice(1);
+    const hashes = {};
+    for (const line of fs.readFileSync(0, "utf8").split("\n")) {
+      if (!line) continue;
+      const idx = line.indexOf("\t");
+      hashes[line.slice(0, idx)] = "sha256:" + line.slice(idx + 1);
+    }
+    const sorted = {};
+    for (const k of Object.keys(hashes).sort()) sorted[k] = hashes[k];
+    fs.writeFileSync(outPath, JSON.stringify({ version: 1, syncedAt: version, hashes: sorted }, null, 2) + "\n");
+  ' "$version" "$out"
+}

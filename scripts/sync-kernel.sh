@@ -161,27 +161,9 @@ VERSION_FILE="$APP_REPO_ABS/.kernel-version"
 PLAN="$(manifest_copy_plan "$PRESET_KEY" | awk -F'\t' '!seen[$1]++')"
 
 # ─── Adopt the current app contents as the baseline (4.2, D2a) ──────────────
-# Write a TSV of "<target-rel>\t<sha256hex>" for the given target list, then
-# assemble .kernel-sync-hashes.json via node (mirrors new-app.sh's node -e
-# JSON pattern). Used both by --adopt-existing and by the post-write rewrite.
-write_hash_file() {
-  local tsv="$1"
-  node -e '
-    const fs = require("fs");
-    const [tsvPath, version, outPath] = process.argv.slice(1);
-    const body = fs.readFileSync(tsvPath, "utf8");
-    const hashes = {};
-    for (const line of body.split("\n")) {
-      if (!line) continue;
-      const idx = line.indexOf("\t");
-      hashes[line.slice(0, idx)] = "sha256:" + line.slice(idx + 1);
-    }
-    const sorted = {};
-    for (const k of Object.keys(hashes).sort()) sorted[k] = hashes[k];
-    fs.writeFileSync(outPath, JSON.stringify({ version: 1, syncedAt: version, hashes: sorted }, null, 2) + "\n");
-  ' "$tsv" "$KERNEL_VERSION" "$HASHES_FILE"
-}
-
+# write_hash_file (scripts/lib/manifest.sh) assembles .kernel-sync-hashes.json
+# from "<target>\t<sha256hex>" lines on stdin — no temp file, shared with
+# new-app.sh.
 if [ ! -f "$HASHES_FILE" ]; then
   if [ "$ADOPT_EXISTING" -ne 1 ]; then
     echo "sync-kernel.sh: '$HASHES_FILE' not found — this app has no sync baseline." >&2
@@ -189,22 +171,19 @@ if [ ! -f "$HASHES_FILE" ]; then
     exit 1
   fi
   # Adopt: hash every present plan target, write the baseline + version stamp.
-  present_count=0
-  adopt_tsv="$(mktemp)"
-  trap 'rm -f "$adopt_tsv"' EXIT
-  while IFS=$'\t' read -r target _src; do
-    [ -n "$target" ] || continue
-    if [ -f "$APP_REPO_ABS/$target" ]; then
-      printf '%s\t%s\n' "$target" "$(sha256_file "$APP_REPO_ABS/$target")" >>"$adopt_tsv"
-      present_count=$((present_count + 1))
-    fi
-  done <<<"$PLAN"
+  adopt_pairs="$(
+    while IFS=$'\t' read -r target _src; do
+      [ -n "$target" ] || continue
+      [ -f "$APP_REPO_ABS/$target" ] && printf '%s\t%s\n' "$target" "$(sha256_file "$APP_REPO_ABS/$target")"
+    done <<<"$PLAN"
+  )"
+  present_count="$(printf '%s' "$adopt_pairs" | awk 'NF{c++} END{print c + 0}')"
 
   if [ "$DRY_RUN" -eq 1 ]; then
     echo "sync-kernel.sh: [dry-run] would adopt $present_count present file(s) as the baseline at $KERNEL_VERSION; no file written"
     exit 0
   fi
-  write_hash_file "$adopt_tsv"
+  printf '%s\n' "$adopt_pairs" | write_hash_file "$HASHES_FILE" "$KERNEL_VERSION"
   printf '%s\n' "$KERNEL_VERSION" >"$VERSION_FILE"
   echo "sync-kernel.sh: adopted baseline at $KERNEL_VERSION ($present_count file(s)); .kernel-sync-hashes.json + .kernel-version written. Re-run sync to apply kernel updates."
   exit 0
@@ -338,12 +317,11 @@ for i in "${!plan_target[@]}"; do
 done
 
 # ─── Post-write: rewrite state files (4.7) ──────────────────────────────────
-post_tsv="$(mktemp)"
-trap 'rm -f "$post_tsv"' EXIT
-for target in "${plan_target[@]}"; do
-  printf '%s\t%s\n' "$target" "$(sha256_file "$APP_REPO_ABS/$target")" >>"$post_tsv"
-done
-write_hash_file "$post_tsv"
+{
+  for target in "${plan_target[@]}"; do
+    printf '%s\t%s\n' "$target" "$(sha256_file "$APP_REPO_ABS/$target")"
+  done
+} | write_hash_file "$HASHES_FILE" "$KERNEL_VERSION"
 printf '%s\n' "$KERNEL_VERSION" >"$VERSION_FILE"
 
 echo "sync-kernel.sh: synced $copied file(s); .kernel-version now $KERNEL_VERSION"
