@@ -28,7 +28,9 @@
       "openspec/specs/dev-gates/spec.md",
       "openspec/specs/release-automation/spec.md",
       "openspec/specs/preset-portability/spec.md",
-      "openspec/specs/app-generation/spec.md"
+      "openspec/specs/app-generation/spec.md",
+      "openspec/specs/kernel-sync/spec.md",
+      "openspec/specs/repo-setup/spec.md"
     ],
     "appStateFiles": [".kernel-version", ".kernel-sync-hashes.json"]
   },
