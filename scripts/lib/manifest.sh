@@ -36,18 +36,21 @@ expand_entry() {
     fi
     ;;
   *[*?[]*)
-    shopt -s nullglob globstar
-    # shellcheck disable=SC2206
-    # (intentional: $p IS a glob; word-splitting the unquoted expansion is the
-    # wildcard match)
-    local matches=($p)
-    shopt -u nullglob globstar
-    if [ "${#matches[@]}" -gt 0 ]; then
-      local m
-      for m in "${matches[@]}"; do
-        [ -f "$m" ] && printf '%s\n' "$m"
-      done
-    fi
+    # Expand in a subshell so the nullglob/globstar toggles stay local — this is
+    # a shared lib function, so a caller's own glob settings must not leak out.
+    # (globstar is bash-4+; this branch only fires for non-`/**` glob entries.)
+    (
+      shopt -s nullglob globstar
+      # shellcheck disable=SC2206
+      # (intentional: $p IS a glob; word-splitting the unquoted expansion is the
+      # wildcard match)
+      matches=($p)
+      if [ "${#matches[@]}" -gt 0 ]; then
+        for m in "${matches[@]}"; do
+          [ -f "$m" ] && printf '%s\n' "$m"
+        done
+      fi
+    )
     ;;
   *)
     [ -e "$p" ] && printf '%s\n' "$p"
@@ -122,8 +125,13 @@ manifest_copy_plan() {
   fi
   owned="$(manifest_app_owned_files)"
 
-  {
-    local entry f rel target source
+  # Generate the raw plan into a variable FIRST (command substitution), so a jq
+  # error in any generation step surfaces here under set -e rather than being
+  # masked by a downstream filter pipeline (the filter loop would otherwise
+  # always exit 0). Then filter app-owned targets in the current shell via a
+  # here-string (no pipe).
+  local raw entry f rel target source line
+  raw="$(
     # Kernel-tier paths minus excludeFromGenerate and preset-wins overlap.
     while IFS= read -r entry; do
       [ -n "$entry" ] || continue
@@ -159,15 +167,18 @@ manifest_copy_plan() {
       [ -n "$target" ] || continue
       printf '%s\t%s\n' "$target" "$preset_key/$source"
     done < <(manifest_preset_app_templates "$preset_key")
-  } | while IFS= read -r line; do
-    # Drop app-owned targets (D3d). grep -Fxq on the newline-set is portable
-    # (BSD awk -v mangles embedded newlines); ~60 lines, negligible cost.
+  )"
+
+  # Drop app-owned targets (D3d). grep -Fxq on the newline-set is portable (BSD
+  # awk -v mangles embedded newlines); ~60 lines, negligible cost. Here-string,
+  # not a pipe, so this runs in the current shell.
+  while IFS= read -r line; do
     [ -n "$line" ] || continue
     if [ -n "$owned" ] && printf '%s\n' "$owned" | grep -Fxq -- "${line%%$'\t'*}"; then
       continue
     fi
     printf '%s\n' "$line"
-  done
+  done <<<"$raw"
 }
 
 # ─── semver_cmp <a> <b> (D1) ─────────────────────────────────────────────────

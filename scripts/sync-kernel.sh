@@ -259,7 +259,9 @@ done <<<"$PLAN"
 # ─── Kernel-deleted paths (4.8, D4) ─────────────────────────────────────────
 # Paths recorded in the app's baseline but no longer in the kernel's plan.
 deleted_paths=()
-plan_targets_sorted="$(printf '%s\n' "${plan_target[@]}" | sort -u)"
+# `+`-expansion guards the empty-array case under set -u on bash < 4.4 (PLAN is
+# non-empty in practice, but stay consistent with the conflict_paths guard).
+plan_targets_sorted="$(printf '%s\n' "${plan_target[@]+"${plan_target[@]}"}" | sort -u)"
 while IFS= read -r old; do
   [ -n "$old" ] || continue
   if ! printf '%s\n' "$plan_targets_sorted" | grep -Fxq -- "$old"; then
@@ -338,7 +340,7 @@ done
 
 # ─── Post-write: rewrite state files (4.7) ──────────────────────────────────
 {
-  for target in "${plan_target[@]}"; do
+  for target in "${plan_target[@]+"${plan_target[@]}"}"; do
     printf '%s\t%s\n' "$target" "$(sha256_file "$APP_REPO_ABS/$target")"
   done
 } | write_hash_file "$HASHES_FILE" "$KERNEL_VERSION"
