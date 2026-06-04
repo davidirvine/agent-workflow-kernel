@@ -20,6 +20,7 @@
     "excludeFromGenerate": [
       ".github/workflows/**",
       "scripts/new-app.sh",
+      "scripts/sync-kernel.sh",
       "scripts/generate-assert.sh",
       "scripts/check-manifest.sh",
       "scripts/run-extraction-audit.sh"
