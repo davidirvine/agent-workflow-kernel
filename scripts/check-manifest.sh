@@ -188,6 +188,12 @@ for key in "${preset_keys[@]}"; do
   fi
 
   for field in instrumentStubs appTemplates; do
+    # Use the shared lib helpers (not inline jq) so the to_entries query has one
+    # definition, matching Checks 6 and 7.
+    case "$field" in
+    instrumentStubs) field_entries="$(manifest_preset_instrument_stubs "$key")" ;;
+    appTemplates) field_entries="$(manifest_preset_app_templates "$key")" ;;
+    esac
     while IFS=$'\t' read -r target source; do
       [ -z "$target" ] && continue
       src_full="$key/$source"
@@ -197,7 +203,7 @@ for key in "${preset_keys[@]}"; do
       if printf '%s\n' "$preset_files_flat" | grep -Fxq -- "$target"; then
         print_violation "$field target '$target' (preset '$key') also appears in the preset's paths — the generator would write it then overwrite it"
       fi
-    done < <(jq -r --arg k "$key" --arg f "$field" '.stack[$k][$f] // {} | to_entries[] | "\(.key)\t\(.value)"' "$MANIFEST")
+    done <<<"$field_entries"
   done
 done
 

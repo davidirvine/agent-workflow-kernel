@@ -189,6 +189,12 @@ if [ ! -f "$HASHES_FILE" ]; then
   exit 0
 fi
 
+# A baseline already exists, so --adopt-existing is a no-op here — say so rather
+# than silently ignoring it, so the user knows their flag had no effect.
+if [ "$ADOPT_EXISTING" -eq 1 ]; then
+  echo "sync-kernel.sh: --adopt-existing ignored — .kernel-sync-hashes.json already exists (baseline is already established)" >&2
+fi
+
 # ─── Version comparison (4.2, D1) ───────────────────────────────────────────
 if [ -f "$VERSION_FILE" ]; then
   APP_VERSION="$(tr -d '[:space:]' <"$VERSION_FILE")"
@@ -315,6 +321,11 @@ if [ "${#conflict_paths[@]}" -gt 0 ] && [ "$ACCEPT_KERNEL" -ne 1 ]; then
 fi
 
 # ─── Write phase (4.6) ──────────────────────────────────────────────────────
+# Every plan entry (new + clean + conflict-under-accept) is re-copied, including
+# "clean" files already byte-identical to the kernel's. This is a deliberate
+# simplicity trade-off: a sync is an infrequent, explicit version bump, so the
+# `cp -p` mtime churn on clean files (which could trigger an mtime-based rebuild
+# afterward) is acceptable and not worth a per-file content comparison to avoid.
 echo "sync-kernel.sh: syncing $APP_VERSION → $KERNEL_VERSION"
 
 is_in() {
