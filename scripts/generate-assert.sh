@@ -257,6 +257,32 @@ else
   fi
 fi
 
+# ─── (5.11) --adopt-existing bootstrap path ─────────────────────────────────
+# Distinct code path with its own hash computation + early exit. Drop the app's
+# baseline and re-adopt against the (unbumped) kernel; assert it rewrites a
+# correct baseline. Done last so it does not perturb the earlier sync cases.
+rm -f "$APP/.kernel-sync-hashes.json"
+if ! "$SCRIPT_DIR/sync-kernel.sh" --kernel-repo "$KERNEL_ROOT" --app-repo "$APP" --adopt-existing >"$TMP/sync-adopt.log" 2>&1; then
+  cat "$TMP/sync-adopt.log" >&2
+  note "sync --adopt-existing: expected zero exit but it failed"
+else
+  if [ ! -f "$APP/.kernel-sync-hashes.json" ]; then
+    note "sync --adopt-existing: did not write .kernel-sync-hashes.json"
+  else
+    adopt_synced="$(jq -r '.syncedAt // ""' "$APP/.kernel-sync-hashes.json")"
+    [ "$adopt_synced" = "$KERNEL_VERSION" ] || note "sync --adopt-existing: syncedAt is '$adopt_synced', expected '$KERNEL_VERSION'"
+    adopt_count="$(jq -r '.hashes | length' "$APP/.kernel-sync-hashes.json")"
+    [ "$adopt_count" -gt 0 ] || note "sync --adopt-existing: wrote an empty hash record"
+    # The bootstrap baseline excludes app-owned files, same as generation.
+    while IFS= read -r aof; do
+      [ -n "$aof" ] || continue
+      h="$(jq -r --arg k "$aof" '.hashes[$k] // ""' "$APP/.kernel-sync-hashes.json")"
+      [ -z "$h" ] || note "sync --adopt-existing: baseline tracks app-owned file '$aof'"
+    done < <(manifest_app_owned_files)
+  fi
+  [ "$(tr -d '[:space:]' <"$APP/.kernel-version")" = "$KERNEL_VERSION" ] || note "sync --adopt-existing: .kernel-version not set to $KERNEL_VERSION"
+fi
+
 # ─── (5.6) Report ───────────────────────────────────────────────────────────
 if [ "$problems" -ne 0 ]; then
   KEEP=1

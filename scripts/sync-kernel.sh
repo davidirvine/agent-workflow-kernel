@@ -206,7 +206,27 @@ if [ "$cmp" -ne 2 ]; then
 fi
 
 # ─── Categorize each plan entry (4.4) ───────────────────────────────────────
-recorded_hash() { jq -r --arg k "$1" '.hashes[$k] // ""' "$HASHES_FILE" 2>/dev/null; }
+# Preload the recorded baseline ONCE (a single jq call) into parallel arrays and
+# look it up in-shell, rather than spawning jq per plan entry. bash 3.2 has no
+# associative arrays, so this is a linear scan — O(n²) string compares but zero
+# process spawns, which beats ~n jq invocations at any realistic manifest size.
+rec_keys=()
+rec_vals=()
+while IFS=$'\t' read -r _rk _rv; do
+  [ -n "$_rk" ] || continue
+  rec_keys+=("$_rk")
+  rec_vals+=("$_rv")
+done < <(jq -r '.hashes // {} | to_entries[] | "\(.key)\t\(.value)"' "$HASHES_FILE" 2>/dev/null)
+
+recorded_hash() {
+  local k="$1" i
+  for i in "${!rec_keys[@]}"; do
+    if [ "${rec_keys[$i]}" = "$k" ]; then
+      printf '%s' "${rec_vals[$i]}"
+      return 0
+    fi
+  done
+}
 
 new_paths=()
 clean_paths=()
