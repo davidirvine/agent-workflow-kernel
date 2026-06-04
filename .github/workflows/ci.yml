@@ -98,10 +98,20 @@ jobs:
 
   # Slice-3 gate (design D9): run new-app.sh into a tempdir and assert the
   # emitted tree structurally + by identity (scripts/generate-assert.sh). Node
-  # from .nvmrc is needed for the generator's `node -e` JSON edits; jq and git
-  # are preinstalled on ubuntu-latest, and generate-assert provides a headless
-  # git identity for the scaffold commit. No FAUST and no app build here — the
-  # emitted app is only built in slice 5's smoke-app.
+  # from .nvmrc is needed for the generator's `node -e` JSON edits; jq, git, and
+  # rsync are preinstalled on ubuntu-latest, and generate-assert provides a
+  # headless git identity for the scaffold commit. No FAUST and no app build
+  # here — the emitted app is only built in slice 5's smoke-app.
+  #
+  # Slice-4 (design D9) extends this same gate: generate-assert.sh now also runs
+  # the sync round-trip on the emitted app — positive (sync --dry-run reports
+  # "up to date"), negative (a bumped kernel copy + a locally-edited file makes
+  # sync refuse with the conflict named), and --accept-kernel resolution. The
+  # steps live inside generate-assert.sh so they run identically here and
+  # locally; nothing new is needed in this job beyond the rsync/jq the runner
+  # already provides. Per design D7 NO setup-check job is added — setup.sh
+  # --check is for humans + downstream consumers; the kernel's CI provisions its
+  # prereqs explicitly via the install steps above.
   generate-assert:
     name: generate-assert
     runs-on: ubuntu-latest
@@ -112,7 +122,7 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - name: Generate an app and assert the emitted tree
+      - name: Generate an app and assert the emitted tree + sync round-trip
         run: scripts/generate-assert.sh
 
   # Pending stub (D4): present and green from day one so the harness slot
