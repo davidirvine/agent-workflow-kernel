@@ -281,6 +281,15 @@ else
     done < <(manifest_app_owned_files)
   fi
   [ "$(tr -d '[:space:]' <"$APP/.kernel-version")" = "$KERNEL_VERSION" ] || note "sync --adopt-existing: .kernel-version not set to $KERNEL_VERSION"
+  # The adopted baseline must enable a normal sync (spec: "a subsequent
+  # sync-kernel.sh invocation operates as a normal sync from a real baseline").
+  if ! "$SCRIPT_DIR/sync-kernel.sh" --kernel-repo "$KERNEL_ROOT" --app-repo "$APP" --dry-run >"$TMP/sync-postadopt.log" 2>&1; then
+    cat "$TMP/sync-postadopt.log" >&2
+    note "sync after --adopt-existing: a normal dry-run sync exited non-zero"
+  elif ! grep -q "up to date" "$TMP/sync-postadopt.log"; then
+    cat "$TMP/sync-postadopt.log" >&2
+    note "sync after --adopt-existing: dry-run did not report 'up to date' from the adopted baseline"
+  fi
 fi
 
 # ─── (5.6) Report ───────────────────────────────────────────────────────────

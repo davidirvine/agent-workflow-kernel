@@ -182,13 +182,15 @@ for entry in "${preset_path_entries[@]}"; do
 done
 
 # ─── (4.2 + 4.3) Copy specs verbatim (kernel + preset) ──────────────────────
-{
-  manifest_kernel_specs
-  manifest_preset_specs "$PRESET_KEY"
-} | while IFS= read -r s; do
+# Process substitution (not a pipe) keeps the loop in the current shell, matching
+# the convention in generate-assert.sh/sync-kernel.sh.
+while IFS= read -r s; do
   [ -z "$s" ] && continue
   copy_file "$s" "$OUTPUT_ABS/$s"
-done
+done < <(
+  manifest_kernel_specs
+  manifest_preset_specs "$PRESET_KEY"
+)
 
 # ─── (4.4) Write instrument-tier stubs and app-tier templates ───────────────
 while IFS=$'\t' read -r target source; do
