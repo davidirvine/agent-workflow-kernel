@@ -27,9 +27,17 @@ REPO_URL="https://example.com/smoke-app"
 # ─── (5.1) Tempdir + teardown trap ──────────────────────────────────────────
 TMP="$(mktemp -d)"
 APP="$TMP/$NAME"
+# Second tempdir for the sync negative/accept-kernel cases (task 5.2c/d): a
+# bumped copy of the kernel repo. Declared here and registered in the EXIT trap
+# so it is torn down alongside $TMP on success and left for inspection on
+# failure. Empty until the sync round-trip section creates it.
+KERNEL_COPY=""
 KEEP=0
 cleanup() {
-  if [ "$KEEP" -eq 0 ]; then rm -rf "$TMP"; fi
+  if [ "$KEEP" -eq 0 ]; then
+    rm -rf "$TMP"
+    [ -n "$KERNEL_COPY" ] && rm -rf "$KERNEL_COPY"
+  fi
 }
 trap cleanup EXIT
 
@@ -161,6 +169,73 @@ grep -Fq "github.com/davidirvine/agent-workflow-kernel" "$VITE_FILE" && note "vi
 if ! (cd "$APP" && scripts/check-identity-leak.sh >"$TMP/leak.log" 2>&1); then
   cat "$TMP/leak.log" >&2
   note "the emitted tree's scripts/check-identity-leak.sh failed"
+fi
+
+# ─── (5.7 / task 5.2a) Sync-state files present and consistent ──────────────
+KERNEL_VERSION="$(manifest_kernel_version "$KERNEL_ROOT")"
+if [ ! -f "$APP/.kernel-version" ]; then
+  note "missing .kernel-version at the emitted tree root"
+else
+  app_kv="$(tr -d '[:space:]' <"$APP/.kernel-version")"
+  [ "$app_kv" = "$KERNEL_VERSION" ] || note ".kernel-version is '$app_kv', expected '$KERNEL_VERSION'"
+fi
+if [ ! -f "$APP/.kernel-sync-hashes.json" ]; then
+  note "missing .kernel-sync-hashes.json at the emitted tree root"
+else
+  synced_at="$(jq -r '.syncedAt // ""' "$APP/.kernel-sync-hashes.json")"
+  [ "$synced_at" = "$KERNEL_VERSION" ] || note ".kernel-sync-hashes.json syncedAt is '$synced_at', expected '$KERNEL_VERSION'"
+  # Every tracked (kernel-/stack-tier) path has a hash entry.
+  while IFS=$'\t' read -r target _src; do
+    [ -n "$target" ] || continue
+    h="$(jq -r --arg k "$target" '.hashes[$k] // ""' "$APP/.kernel-sync-hashes.json")"
+    [ -n "$h" ] || note ".kernel-sync-hashes.json has no entry for tracked path: $target"
+  done < <(manifest_copy_plan "$PRESET_KEY" | awk -F'\t' '!seen[$1]++')
+fi
+
+# ─── (5.8 / task 5.2b) Positive round-trip: fresh app is up to date ─────────
+if ! "$SCRIPT_DIR/sync-kernel.sh" --kernel-repo "$KERNEL_ROOT" --app-repo "$APP" --dry-run >"$TMP/sync-dry.log" 2>&1; then
+  cat "$TMP/sync-dry.log" >&2
+  note "sync round-trip dry-run exited non-zero on a freshly-generated app"
+elif ! grep -q "up to date" "$TMP/sync-dry.log"; then
+  cat "$TMP/sync-dry.log" >&2
+  note "sync round-trip dry-run did not report 'up to date'"
+fi
+
+# ─── (5.9 / task 5.2c) Negative case: a locally-modified file blocks sync ───
+# A bumped copy of the kernel (rsync excludes node_modules/.git at any depth so
+# the copy is small but still contains the manifest, release manifest, every
+# kernel.paths source, and the full preset dir that sync reads).
+KERNEL_COPY="$(mktemp -d)"
+if ! rsync -a --exclude node_modules --exclude .git "$KERNEL_ROOT"/ "$KERNEL_COPY"/ >"$TMP/rsync.log" 2>&1; then
+  cat "$TMP/rsync.log" >&2
+  note "failed to copy the kernel repo for the sync negative case"
+else
+  node -e 'const fs=require("fs");const p=process.argv[1];const j=JSON.parse(fs.readFileSync(p,"utf8"));j["."]="99.0.0";fs.writeFileSync(p,JSON.stringify(j,null,2)+"\n")' "$KERNEL_COPY/.release-please-manifest.json"
+  # Modify one synced kernel-tier file in the app to create a clobber conflict.
+  printf '\n# generate-assert local edit (sync negative case)\n' >>"$APP/STACK.md"
+  if "$SCRIPT_DIR/sync-kernel.sh" --kernel-repo "$KERNEL_COPY" --app-repo "$APP" >"$TMP/sync-neg.log" 2>&1; then
+    cat "$TMP/sync-neg.log" >&2
+    note "sync negative case: expected non-zero exit (conflict) but sync succeeded"
+  elif ! grep -q "STACK.md" "$TMP/sync-neg.log"; then
+    cat "$TMP/sync-neg.log" >&2
+    note "sync negative case: conflict output did not name the modified STACK.md"
+  fi
+
+  # ─── (5.10 / task 5.2d) --accept-kernel resolves the conflict ─────────────
+  if ! "$SCRIPT_DIR/sync-kernel.sh" --kernel-repo "$KERNEL_COPY" --app-repo "$APP" --accept-kernel >"$TMP/sync-acc.log" 2>&1; then
+    cat "$TMP/sync-acc.log" >&2
+    note "sync --accept-kernel: expected zero exit but it failed"
+  else
+    if ! diff -q "$KERNEL_COPY/STACK.md" "$APP/STACK.md" >/dev/null 2>&1; then
+      note "sync --accept-kernel: app STACK.md does not match the bumped-kernel's version after resolution"
+    fi
+    acc_synced="$(jq -r '.syncedAt // ""' "$APP/.kernel-sync-hashes.json")"
+    [ "$acc_synced" = "99.0.0" ] || note "sync --accept-kernel: syncedAt is '$acc_synced', expected '99.0.0'"
+    rec="$(jq -r '.hashes["STACK.md"] // ""' "$APP/.kernel-sync-hashes.json")"
+    rec="${rec#sha256:}"
+    cur="$(sha256_file "$APP/STACK.md")"
+    [ "$rec" = "$cur" ] || note "sync --accept-kernel: recorded STACK.md hash does not match the resolved file"
+  fi
 fi
 
 # ─── (5.6) Report ───────────────────────────────────────────────────────────
