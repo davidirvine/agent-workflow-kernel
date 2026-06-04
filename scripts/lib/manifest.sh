@@ -94,6 +94,64 @@ is_overlap() {
   return 1
 }
 
+# ─── manifest_copy_plan <preset-key> (D3/D6) ────────────────────────────────
+# Emit the kernel→app copy plan as "<target-rel>\t<src-rel>" lines, where
+# target-rel is the path in the consuming app and src-rel is the path under the
+# kernel checkout. This is the single definition of "what travels", called by
+# BOTH new-app.sh (generation) and sync-kernel.sh (sync) so the two endpoints
+# cannot drift (design D3). The caller's cwd MUST be the kernel root (expand_entry
+# globs against it) and MANIFEST must point at the kernel's manifest.
+#
+# Rules (mirrors the D3 table): kernel.paths minus the expanded
+# excludeFromGenerate set minus the preset-wins overlap; preset paths flattened
+# (presets/<preset>/ stripped); kernel + preset specs verbatim; appTemplates
+# (target ← preset source). instrumentStubs are intentionally NOT in the plan.
+# Caller is responsible for de-duplicating on target if needed.
+manifest_copy_plan() {
+  local preset_key="$1"
+  local exclude_files="" exclude_entries=() e entry f rel target source
+  while IFS= read -r e; do [ -n "$e" ] && exclude_entries+=("$e"); done < <(manifest_kernel_excludes)
+  if [ "${#exclude_entries[@]}" -gt 0 ]; then
+    exclude_files="$(for e in "${exclude_entries[@]}"; do expand_entry "$e"; done | sort -u)"
+  fi
+
+  # Kernel-tier paths minus excludeFromGenerate and preset-wins overlap.
+  while IFS= read -r entry; do
+    [ -n "$entry" ] || continue
+    while IFS= read -r f; do
+      [ -n "$f" ] || continue
+      if [ -n "$exclude_files" ] && printf '%s\n' "$exclude_files" | grep -Fxq -- "$f"; then continue; fi
+      if is_overlap "$f"; then continue; fi
+      printf '%s\t%s\n' "$f" "$f"
+    done < <(expand_entry "$entry")
+  done < <(manifest_kernel_paths)
+
+  # Preset-tier paths, flattened (strip presets/<preset>/).
+  while IFS= read -r entry; do
+    [ -n "$entry" ] || continue
+    while IFS= read -r f; do
+      [ -n "$f" ] || continue
+      rel="${f#"$preset_key"/}"
+      printf '%s\t%s\n' "$rel" "$f"
+    done < <(expand_entry "$entry")
+  done < <(manifest_preset_paths "$preset_key")
+
+  # Specs verbatim (kernel + preset).
+  {
+    manifest_kernel_specs
+    manifest_preset_specs "$preset_key"
+  } | while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    printf '%s\t%s\n' "$f" "$f"
+  done
+
+  # appTemplates: target ← preset source (re-applied on sync, D3).
+  while IFS=$'\t' read -r target source; do
+    [ -n "$target" ] || continue
+    printf '%s\t%s\n' "$target" "$preset_key/$source"
+  done < <(manifest_preset_app_templates "$preset_key")
+}
+
 # ─── semver_cmp <a> <b> (D1) ─────────────────────────────────────────────────
 # Three-value exit-code contract: 0 → a == b; 1 → a > b; 2 → a < b. POSIX-clean
 # (no negative codes). Uses node -e to avoid the bash/sort -V portability traps.

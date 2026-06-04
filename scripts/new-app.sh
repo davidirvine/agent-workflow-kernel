@@ -287,6 +287,36 @@ if [ -e "$OUTPUT_ABS/openspec/changes/archive" ]; then
   exit 1
 fi
 
+# ─── (5.1) Write the sync-state files (.kernel-version + hashes) ────────────
+# Record the kernel version this app was generated from, and the SHA-256 of
+# every kernel-/stack-tier file just emitted — the exact set sync-kernel.sh
+# tracks (manifest_copy_plan, shared so generation and sync cannot drift, D6).
+# Hashes are taken AFTER identity substitution, so a freshly-generated app is a
+# clean sync baseline (sync sees the emitted files as unmodified). Both files
+# are picked up by `git add -A` below and committed with the scaffold.
+KERNEL_VERSION="$(manifest_kernel_version "$KERNEL_ROOT")"
+gen_tsv="$(mktemp)"
+trap 'rm -f "$gen_tsv"' EXIT
+while IFS=$'\t' read -r target _src; do
+  [ -n "$target" ] || continue
+  printf '%s\t%s\n' "$target" "$(sha256_file "$OUTPUT_ABS/$target")" >>"$gen_tsv"
+done < <(manifest_copy_plan "$PRESET_KEY" | awk -F'\t' '!seen[$1]++')
+
+node -e '
+  const fs = require("fs");
+  const [tsvPath, version, outPath] = process.argv.slice(1);
+  const hashes = {};
+  for (const line of fs.readFileSync(tsvPath, "utf8").split("\n")) {
+    if (!line) continue;
+    const idx = line.indexOf("\t");
+    hashes[line.slice(0, idx)] = "sha256:" + line.slice(idx + 1);
+  }
+  const sorted = {};
+  for (const k of Object.keys(hashes).sort()) sorted[k] = hashes[k];
+  fs.writeFileSync(outPath, JSON.stringify({ version: 1, syncedAt: version, hashes: sorted }, null, 2) + "\n");
+' "$gen_tsv" "$KERNEL_VERSION" "$OUTPUT_ABS/.kernel-sync-hashes.json"
+printf '%s\n' "$KERNEL_VERSION" >"$OUTPUT_ABS/.kernel-version"
+
 # ─── (4.7) git init + single chore commit (D7) ──────────────────────────────
 # No author is configured here — git uses the local environment's identity (a
 # human's git config, or the GIT_AUTHOR_*/GIT_COMMITTER_* env vars that

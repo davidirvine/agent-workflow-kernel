@@ -154,61 +154,11 @@ HASHES_FILE="$APP_REPO_ABS/.kernel-sync-hashes.json"
 VERSION_FILE="$APP_REPO_ABS/.kernel-version"
 
 # ─── Build the copy plan (4.3) ──────────────────────────────────────────────
-# Each plan entry is a "<target-rel>\t<src-rel>" line, where target-rel is the
-# path in the consuming app and src-rel is the path under the kernel checkout
-# (cwd is the kernel root). instrumentStubs are intentionally NOT in the plan.
-build_plan() {
-  # Kernel exclusion set (expanded excludeFromGenerate).
-  local exclude_files=""
-  local exclude_entries=()
-  local e
-  while IFS= read -r e; do [ -n "$e" ] && exclude_entries+=("$e"); done < <(manifest_kernel_excludes)
-  if [ "${#exclude_entries[@]}" -gt 0 ]; then
-    exclude_files="$(for e in "${exclude_entries[@]}"; do expand_entry "$e"; done | sort -u)"
-  fi
-  local entry f rel
-
-  # Kernel-tier paths minus excludeFromGenerate and preset-wins overlap.
-  while IFS= read -r entry; do
-    [ -n "$entry" ] || continue
-    while IFS= read -r f; do
-      [ -n "$f" ] || continue
-      if [ -n "$exclude_files" ] && printf '%s\n' "$exclude_files" | grep -Fxq -- "$f"; then continue; fi
-      if is_overlap "$f"; then continue; fi
-      printf '%s\t%s\n' "$f" "$f"
-    done < <(expand_entry "$entry")
-  done < <(manifest_kernel_paths)
-
-  # Preset-tier paths, flattened (strip presets/<preset>/).
-  while IFS= read -r entry; do
-    [ -n "$entry" ] || continue
-    while IFS= read -r f; do
-      [ -n "$f" ] || continue
-      rel="${f#"$PRESET_KEY"/}"
-      printf '%s\t%s\n' "$rel" "$f"
-    done < <(expand_entry "$entry")
-  done < <(manifest_preset_paths "$PRESET_KEY")
-
-  # Specs verbatim (kernel + preset).
-  {
-    manifest_kernel_specs
-    manifest_preset_specs "$PRESET_KEY"
-  } | while IFS= read -r f; do
-    [ -n "$f" ] || continue
-    printf '%s\t%s\n' "$f" "$f"
-  done
-
-  # appTemplates: target ← preset source (re-applied on sync, D3).
-  local target source
-  while IFS=$'\t' read -r target source; do
-    [ -n "$target" ] || continue
-    printf '%s\t%s\n' "$target" "$PRESET_KEY/$source"
-  done < <(manifest_preset_app_templates "$PRESET_KEY")
-}
-
+# manifest_copy_plan (scripts/lib/manifest.sh) is the single definition of "what
+# travels", shared with new-app.sh so generation and sync cannot drift (D3/D6).
 # Deduplicate on target (preset-wins overlap already removed the kernel copy;
 # this guards any other accidental double-listing). Keep first occurrence.
-PLAN="$(build_plan | awk -F'\t' '!seen[$1]++')"
+PLAN="$(manifest_copy_plan "$PRESET_KEY" | awk -F'\t' '!seen[$1]++')"
 
 # ─── Adopt the current app contents as the baseline (4.2, D2a) ──────────────
 # Write a TSV of "<target-rel>\t<sha256hex>" for the given target list, then
