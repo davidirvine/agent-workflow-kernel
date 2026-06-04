@@ -292,6 +292,58 @@ else
   done
 fi
 
+# ─── Check 7: appOwnedFiles are real traveling files excluded from sync ──────
+#
+# (design D3d) kernel.appOwnedFiles lists app-relative target paths that
+# new-app.sh customizes per app (identity substitution, package.json mutation,
+# release-manifest reset) and that sync-kernel.sh must therefore NOT re-apply.
+# Each entry must be a literal path that actually travels at generation (so a
+# typo cannot silently exclude nothing), and must not double up with the other
+# categories (appStateFiles / instrumentStubs / appTemplates targets).
+app_owned_files=()
+while IFS= read -r line; do
+  [ -n "$line" ] && app_owned_files+=("$line")
+done < <(manifest_app_owned_files)
+
+if [ "${#app_owned_files[@]}" -gt 0 ]; then
+  # Candidate emitted-target set: expanded kernel.paths (kernel_files, Check 5)
+  # plus each preset's flattened expanded paths.
+  emitted_targets="$kernel_files"
+  for key in "${preset_keys[@]}"; do
+    while IFS= read -r entry; do
+      [ -n "$entry" ] || continue
+      while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        emitted_targets+=$'\n'"${f#"$key"/}"
+      done < <(expand_entry "$entry")
+    done < <(manifest_preset_paths "$key")
+  done
+
+  # The other-category target sets it must not collide with.
+  other_targets=""
+  while IFS= read -r t; do [ -n "$t" ] && other_targets+=$'\n'"$t"; done < <(manifest_app_state_files)
+  for key in "${preset_keys[@]}"; do
+    while IFS=$'\t' read -r target _source; do
+      [ -n "$target" ] && other_targets+=$'\n'"$target"
+    done < <(manifest_preset_instrument_stubs "$key")
+    while IFS=$'\t' read -r target _source; do
+      [ -n "$target" ] && other_targets+=$'\n'"$target"
+    done < <(manifest_preset_app_templates "$key")
+  done
+
+  for aof in "${app_owned_files[@]}"; do
+    case "$aof" in
+    *[*?[]*) print_violation "appOwnedFiles entry '$aof' must be a literal path (no glob metacharacters)" ;;
+    esac
+    if ! printf '%s\n' "$emitted_targets" | grep -Fxq -- "$aof"; then
+      print_violation "appOwnedFiles entry '$aof' does not match any emitted file (expanded kernel.paths or a preset's flattened paths) — a no-op exclusion"
+    fi
+    if printf '%s\n' "$other_targets" | grep -Fxq -- "$aof"; then
+      print_violation "appOwnedFiles entry '$aof' also appears as an appStateFiles / instrumentStubs / appTemplates target — it belongs to only one category"
+    fi
+  done
+fi
+
 # ─── Result ────────────────────────────────────────────────────────────────
 
 total_specs=$((${#kernel_specs[@]} + ${#stack_specs[@]}))

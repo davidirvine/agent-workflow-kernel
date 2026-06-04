@@ -33,7 +33,13 @@
       "openspec/specs/kernel-sync/spec.md",
       "openspec/specs/repo-setup/spec.md"
     ],
-    "appStateFiles": [".kernel-version", ".kernel-sync-hashes.json"]
+    "appStateFiles": [".kernel-version", ".kernel-sync-hashes.json"],
+    "appOwnedFiles": [
+      ".release-please-manifest.json",
+      "package.json",
+      "vite.config.js",
+      "src/components/Shell.svelte"
+    ]
   },
   "stack": {
     "presets/svelte-faust-synth": {

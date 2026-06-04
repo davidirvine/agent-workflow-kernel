@@ -190,6 +190,14 @@ else
     h="$(jq -r --arg k "$target" '.hashes[$k] // ""' "$APP/.kernel-sync-hashes.json")"
     [ -n "$h" ] || note ".kernel-sync-hashes.json has no entry for tracked path: $target"
   done < <(manifest_copy_plan "$PRESET_KEY" | awk -F'\t' '!seen[$1]++')
+
+  # App-owned files (D3d) are customized at generation and excluded from sync,
+  # so they must NOT appear in the clobber-tracking hash file.
+  while IFS= read -r aof; do
+    [ -n "$aof" ] || continue
+    h="$(jq -r --arg k "$aof" '.hashes[$k] // ""' "$APP/.kernel-sync-hashes.json")"
+    [ -z "$h" ] || note ".kernel-sync-hashes.json tracks app-owned file '$aof' (must be excluded from sync)"
+  done < <(manifest_app_owned_files)
 fi
 
 # ─── (5.8 / task 5.2b) Positive round-trip: fresh app is up to date ─────────
@@ -235,6 +243,17 @@ else
     rec="${rec#sha256:}"
     cur="$(sha256_file "$APP/STACK.md")"
     [ "$rec" = "$cur" ] || note "sync --accept-kernel: recorded STACK.md hash does not match the resolved file"
+
+    # App-owned files (D3d) must survive even an --accept-kernel sync against a
+    # bumped kernel: identity substitution and the release-manifest reset are
+    # NOT clobbered with the kernel's preset/placeholder versions.
+    grep -Fq "'$NAME'" "$APP/src/components/Shell.svelte" || note "sync clobbered Shell.svelte's namespace (lost '$NAME')"
+    grep -Fq "'__APP_NAMESPACE__'" "$APP/src/components/Shell.svelte" && note "sync re-introduced the '__APP_NAMESPACE__' sentinel into Shell.svelte"
+    aof_pkg_name="$(node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).name||"")' "$APP/package.json")"
+    [ "$aof_pkg_name" = "$NAME" ] || note "sync clobbered package.json name (is '$aof_pkg_name', expected '$NAME')"
+    aof_app_ver="$(jq -r '."."' "$APP/.release-please-manifest.json")"
+    [ "$aof_app_ver" = "0.1.0" ] || note "sync clobbered .release-please-manifest.json (app version is '$aof_app_ver', expected 0.1.0)"
+    grep -Fq "JSON.stringify(\"$TITLE\")" "$APP/vite.config.js" || note "sync clobbered vite.config.js title (lost \"$TITLE\")"
   fi
 fi
 

@@ -276,6 +276,18 @@ report_deleted() {
   fi
 }
 
+# App-owned files (D3d) are excluded from the copy plan entirely; report them
+# informationally so the user knows a kernel-side change to one of them won't
+# arrive via sync and needs a manual merge if wanted.
+report_app_owned() {
+  local owned p
+  owned="$(manifest_app_owned_files)"
+  if [ -n "$owned" ]; then
+    echo "  app-owned, not re-synced (customized at generation — merge upstream changes by hand if needed):"
+    while IFS= read -r p; do [ -n "$p" ] && echo "    - $p"; done <<<"$owned"
+  fi
+}
+
 # ─── Dry-run report / conflict refusal (4.5) ────────────────────────────────
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "sync-kernel.sh: [dry-run] syncing $APP_VERSION → $KERNEL_VERSION"
@@ -288,6 +300,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
     echo "  → re-run with --accept-kernel to overwrite these with the kernel's version."
   fi
   report_deleted
+  report_app_owned
   echo "sync-kernel.sh: [dry-run] no file written"
   exit 0
 fi
@@ -335,3 +348,4 @@ printf '%s\n' "$KERNEL_VERSION" >"$VERSION_FILE"
 
 echo "sync-kernel.sh: synced $copied file(s); .kernel-version now $KERNEL_VERSION"
 report_deleted
+report_app_owned

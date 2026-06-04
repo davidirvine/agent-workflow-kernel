@@ -85,6 +85,20 @@ If the consuming app has no `.kernel-sync-hashes.json` (the app was scaffolded b
 - **WHEN** sync runs against an app whose instrument paths (`src/param-schema.js`, etc.) have real content
 - **THEN** the instrument files are not read, hashed, copied, or compared; the user's instrument is left intact
 
+### Requirement: Sync does not re-apply files that generation customized per app
+
+`sync-kernel.sh` SHALL exclude every `kernel.appOwnedFiles` entry from its copy plan and from `.kernel-sync-hashes.json`. These files — the identity-substituted chassis files, the mutated `package.json`, and the reset `.release-please-manifest.json` — are app-owned after generation; re-applying the kernel's version would clobber the app's identity (localStorage namespace, package name, title) and release state. Sync SHALL report them informationally as "app-owned, not re-synced".
+
+#### Scenario: An app-owned file is not clobbered, even with `--accept-kernel`
+
+- **WHEN** a consuming app behind the kernel runs sync (including with `--accept-kernel`) and the kernel's version of an `appOwnedFiles` entry differs from the app's customized version
+- **THEN** sync does not overwrite the app's file; the app's identity and release state (localStorage namespace, `package.json` name, app release version, app title) are preserved
+
+#### Scenario: App-owned files are absent from the hash record
+
+- **WHEN** `new-app.sh` generates an app, or `sync-kernel.sh` completes a sync
+- **THEN** no `kernel.appOwnedFiles` entry appears in `.kernel-sync-hashes.json`
+
 ### Requirement: Sync is additive only
 
 `sync-kernel.sh` SHALL NOT delete files from the consuming app. If a kernel-tier or stack-tier path that existed in a prior sync is no longer in the kernel's manifest, the script SHALL report the path as informational ("kernel no longer tracks; left in place") and leave it untouched.

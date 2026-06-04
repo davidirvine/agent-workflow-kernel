@@ -149,6 +149,16 @@ honored, preset paths flattened, preset-wins overlap, specs verbatim,
 `git init`, and **never** re-applies `instrumentStubs` (your instrument is
 app-owned content after generation).
 
+**App-owned files are never re-synced (design D3d).** The files `new-app.sh`
+customizes per app — `src/components/Shell.svelte` (namespace), `vite.config.js`
+(title/repo), `package.json` (name/version/scripts), and
+`.release-please-manifest.json` (the app's release version) — are declared in
+`kernel.appOwnedFiles` and excluded from the sync plan and the hash record, so a
+sync can never clobber your app's identity or release state. The trade-off:
+kernel-side changes to those four files do **not** arrive via sync; sync lists
+them as "app-owned, not re-synced" so you can merge any upstream change by hand
+if you want it.
+
 **Convention: run `--dry-run` first, then the real sync.** The dry-run prints
 the upgrade path (`X.Y.Z → A.B.C`), the count of new/clean/conflict files, and
 every conflicting path, without touching anything.

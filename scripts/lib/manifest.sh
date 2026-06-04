@@ -61,6 +61,7 @@ manifest_kernel_paths() { jq -r '.kernel.paths[]' "$MANIFEST"; }
 manifest_kernel_excludes() { jq -r '.kernel.excludeFromGenerate // [] | .[]' "$MANIFEST"; }
 manifest_kernel_specs() { jq -r '.kernel.specs // [] | .[]' "$MANIFEST"; }
 manifest_app_state_files() { jq -r '.kernel.appStateFiles // [] | .[]' "$MANIFEST"; }
+manifest_app_owned_files() { jq -r '.kernel.appOwnedFiles // [] | .[]' "$MANIFEST"; }
 
 manifest_preset_keys() { jq -r '.stack | keys[]' "$MANIFEST"; }
 manifest_preset_paths() { jq -r --arg k "$1" '.stack[$k].paths[]' "$MANIFEST"; }
@@ -106,50 +107,67 @@ is_overlap() {
 # excludeFromGenerate set minus the preset-wins overlap; preset paths flattened
 # (presets/<preset>/ stripped); kernel + preset specs verbatim; appTemplates
 # (target ← preset source). instrumentStubs are intentionally NOT in the plan.
-# Caller is responsible for de-duplicating on target if needed.
+# kernel.appOwnedFiles are also filtered out (D3d): files generation customizes
+# per-app (identity substitution, package.json mutation, release-manifest reset)
+# are app-owned afterward — re-syncing them would clobber the app's identity and
+# release state. They still travel at GENERATION (new-app.sh copies them via the
+# raw path queries, then customizes); they are only excluded from the sync /
+# clobber-tracking set. Caller is responsible for de-duplicating on target.
 manifest_copy_plan() {
   local preset_key="$1"
-  local exclude_files="" exclude_entries=() e entry f rel target source
+  local exclude_files="" exclude_entries=() e owned
   while IFS= read -r e; do [ -n "$e" ] && exclude_entries+=("$e"); done < <(manifest_kernel_excludes)
   if [ "${#exclude_entries[@]}" -gt 0 ]; then
     exclude_files="$(for e in "${exclude_entries[@]}"; do expand_entry "$e"; done | sort -u)"
   fi
+  owned="$(manifest_app_owned_files)"
 
-  # Kernel-tier paths minus excludeFromGenerate and preset-wins overlap.
-  while IFS= read -r entry; do
-    [ -n "$entry" ] || continue
-    while IFS= read -r f; do
-      [ -n "$f" ] || continue
-      if [ -n "$exclude_files" ] && printf '%s\n' "$exclude_files" | grep -Fxq -- "$f"; then continue; fi
-      if is_overlap "$f"; then continue; fi
-      printf '%s\t%s\n' "$f" "$f"
-    done < <(expand_entry "$entry")
-  done < <(manifest_kernel_paths)
-
-  # Preset-tier paths, flattened (strip presets/<preset>/).
-  while IFS= read -r entry; do
-    [ -n "$entry" ] || continue
-    while IFS= read -r f; do
-      [ -n "$f" ] || continue
-      rel="${f#"$preset_key"/}"
-      printf '%s\t%s\n' "$rel" "$f"
-    done < <(expand_entry "$entry")
-  done < <(manifest_preset_paths "$preset_key")
-
-  # Specs verbatim (kernel + preset).
   {
-    manifest_kernel_specs
-    manifest_preset_specs "$preset_key"
-  } | while IFS= read -r f; do
-    [ -n "$f" ] || continue
-    printf '%s\t%s\n' "$f" "$f"
-  done
+    local entry f rel target source
+    # Kernel-tier paths minus excludeFromGenerate and preset-wins overlap.
+    while IFS= read -r entry; do
+      [ -n "$entry" ] || continue
+      while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        if [ -n "$exclude_files" ] && printf '%s\n' "$exclude_files" | grep -Fxq -- "$f"; then continue; fi
+        if is_overlap "$f"; then continue; fi
+        printf '%s\t%s\n' "$f" "$f"
+      done < <(expand_entry "$entry")
+    done < <(manifest_kernel_paths)
 
-  # appTemplates: target ← preset source (re-applied on sync, D3).
-  while IFS=$'\t' read -r target source; do
-    [ -n "$target" ] || continue
-    printf '%s\t%s\n' "$target" "$preset_key/$source"
-  done < <(manifest_preset_app_templates "$preset_key")
+    # Preset-tier paths, flattened (strip presets/<preset>/).
+    while IFS= read -r entry; do
+      [ -n "$entry" ] || continue
+      while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        rel="${f#"$preset_key"/}"
+        printf '%s\t%s\n' "$rel" "$f"
+      done < <(expand_entry "$entry")
+    done < <(manifest_preset_paths "$preset_key")
+
+    # Specs verbatim (kernel + preset).
+    while IFS= read -r f; do
+      [ -n "$f" ] || continue
+      printf '%s\t%s\n' "$f" "$f"
+    done < <(
+      manifest_kernel_specs
+      manifest_preset_specs "$preset_key"
+    )
+
+    # appTemplates: target ← preset source (re-applied on sync, D3).
+    while IFS=$'\t' read -r target source; do
+      [ -n "$target" ] || continue
+      printf '%s\t%s\n' "$target" "$preset_key/$source"
+    done < <(manifest_preset_app_templates "$preset_key")
+  } | while IFS= read -r line; do
+    # Drop app-owned targets (D3d). grep -Fxq on the newline-set is portable
+    # (BSD awk -v mangles embedded newlines); ~60 lines, negligible cost.
+    [ -n "$line" ] || continue
+    if [ -n "$owned" ] && printf '%s\n' "$owned" | grep -Fxq -- "${line%%$'\t'*}"; then
+      continue
+    fi
+    printf '%s\n' "$line"
+  done
 }
 
 # ─── semver_cmp <a> <b> (D1) ─────────────────────────────────────────────────
