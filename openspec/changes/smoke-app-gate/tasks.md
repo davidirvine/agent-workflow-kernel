@@ -1,7 +1,7 @@
 ## 1. Build-only setup scope
 
 - [x] 1.1 Add the `--check --ci` build-only scope to `scripts/setup.sh`: refactor the argument parser from single-arg to multi-arg — replace the single `case "${1:-}"` (and its `$# > 1` guard at line 34) with a `while [ "$#" -gt 0 ]; do case "$1" in … esac; shift; done` loop that iterates over all positional args, so `--check --ci` and `--ci --check` are equivalent (order-independent) and an unknown flag still errors. `--ci` is valid only alongside `--check`; `--ci` without `--check`, or any other rejected combination, stays a usage error (exit 2). In `--check` mode under `--ci`, verify only `node` (pinned to `.nvmrc`) and `npm`; skip the `shfmt`/`shellcheck`/`jq`/`gh`/`openspec`/`roborev` checks and the STACK.md shfmt-pin cross-check. Update the script's header comment to document the new scope. The full `--check` and default mode stay unchanged.
-- [ ] 1.2 Run `shfmt -i 2 -w scripts/setup.sh` then `shellcheck -x scripts/setup.sh`; resolve all findings. Manually verify the three repo-setup scenarios: `--check --ci` exits 0 with only node+npm present, exits non-zero when node is absent/mismatched, and `--ci` without `--check` exits 2.
+- [x] 1.2 Run `shfmt -i 2 -w scripts/setup.sh` then `shellcheck -x scripts/setup.sh`; resolve all findings. Manually verify the three repo-setup scenarios: `--check --ci` exits 0 with only node+npm present, exits non-zero when node is absent/mismatched, and `--ci` without `--check` exits 2.
 
 ## 2. Pipeline script
 
