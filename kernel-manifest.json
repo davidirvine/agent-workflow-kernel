@@ -22,6 +22,7 @@
       "scripts/new-app.sh",
       "scripts/sync-kernel.sh",
       "scripts/generate-assert.sh",
+      "scripts/smoke-app.sh",
       "scripts/check-manifest.sh",
       "scripts/run-extraction-audit.sh"
     ],

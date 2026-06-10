@@ -85,8 +85,15 @@ date`, that a locally-edited file against a bumped kernel copy is refused,
   during this slice's implementation; its evidence is preserved in
   `openspec/changes/import-chassis-preset/audit/`. Future slices do not
   re-run it; the traveling chassis-purity test is the standing guard.
-- The `smoke-app` gate — `new-app.sh` → `setup.sh --check` → build, in CI —
-  remains a pending no-op stub. Slice 5 turns it on.
+- The `smoke-app` gate (CI): `scripts/smoke-app.sh` — generates an app with
+  `new-app.sh` into a throwaway workspace, runs the generated app's
+  `setup.sh --check --ci` (the build-only prereq scope), then `npm install`
+  (not `npm ci` — the generator's lockfile is intentionally stale) + `npm run
+build`, and asserts a non-empty `dist/` artifact before declaring success.
+  Proves a freshly generated app builds from scratch. Run locally with
+  `scripts/smoke-app.sh`; it needs only Node (per `.nvmrc`) — FAUST ships as
+  the `@grame/faustwasm` npm dep — and tears its workspace down on success,
+  leaving it with a printed pointer on failure.
 
 ## Feature-level verification
 
@@ -98,6 +105,8 @@ section:
 - `preset-leak-check` green locally and in CI (both scripts exit 0).
 - `generate-assert` green locally and in CI (`scripts/generate-assert.sh`
   exits 0 and removes its tempdir).
+- `smoke-app` green locally and in CI (`scripts/smoke-app.sh` — `new-app.sh` →
+  `setup.sh --check --ci` → build — exits 0 and removes its workspace).
 - pre-push hooks run the same checks as the kernel CI's `lint-format` job.
 
 ## Using new-app.sh
@@ -187,8 +196,9 @@ deleted.
 the kernel checkout and in any generated app (layout auto-detected).
 
 ```
-scripts/setup.sh            # default mode
-scripts/setup.sh --check    # verify global prereqs only; no work, no mutation
+scripts/setup.sh              # default mode
+scripts/setup.sh --check      # verify the full prereq table; no work, no mutation
+scripts/setup.sh --check --ci # verify only build-essential prereqs (node, npm)
 ```
 
 **Default mode** runs `npm ci` at the root (and inside each preset in the kernel
@@ -206,3 +216,13 @@ each miss. `faust` is deliberately **absent** from the table (it ships as an npm
 dep). `--check` is the tool a developer runs on a fresh machine, and the one a
 downstream consumer's CI can gate on; the kernel's own CI provisions its
 prereqs explicitly and adds no `setup-check` job (design D7).
+
+**`--check --ci` mode** is a build-only scope of `--check`: it verifies **only**
+the prereqs needed to install deps and build the app — `node` (per `.nvmrc`)
+and `npm` — and skips the workflow-authoring tools (`shfmt`, `shellcheck`, `jq`,
+`gh`, `openspec`, `roborev`) and the STACK.md shfmt-pin cross-check. It is the
+scope a Node-only CI runner (the kernel's `smoke-app` gate, or a consumer's
+build-only smoke test) can satisfy without provisioning the full toolchain. The
+`--ci` modifier is valid only alongside `--check` (order-independent); `--ci`
+without `--check` is a usage error (exit 2). The full `--check` and default mode
+are unchanged.
