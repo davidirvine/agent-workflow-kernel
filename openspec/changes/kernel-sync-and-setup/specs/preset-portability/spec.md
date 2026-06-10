@@ -9,6 +9,15 @@
 - **WHEN** `scripts/check-manifest.sh` runs
 - **THEN** it asserts `kernel.appStateFiles` exists and contains the literal entries `.kernel-version` and `.kernel-sync-hashes.json`, and that no entry collides with a path in `kernel.paths`, any preset's `paths`, `instrumentStubs`, or `appTemplates`
 
+### Requirement: The manifest declares files that generation customizes and sync must not re-apply
+
+`kernel-manifest.json` SHALL declare a `kernel.appOwnedFiles` array of app-relative target paths that `new-app.sh` customizes at generation (identity substitution, `package.json` mutation, the `.release-please-manifest.json` reset to `0.1.0`) and that `sync-kernel.sh` SHALL NOT re-apply. Each entry SHALL be a literal path that travels at generation (present in the expanded `kernel.paths` or a preset's flattened `paths`) and SHALL NOT also appear as an `appStateFiles`, `instrumentStubs`, or `appTemplates` target.
+
+#### Scenario: appOwnedFiles are validated as real, single-category paths
+
+- **WHEN** `scripts/check-manifest.sh` runs
+- **THEN** it asserts every `kernel.appOwnedFiles` entry is a literal path that matches an emitted file (expanded `kernel.paths` or a preset's flattened `paths`) and does not also appear as an `appStateFiles`, `instrumentStubs`, or `appTemplates` target
+
 ### Requirement: `excludeFromGenerate` applies to sync as well as generation
 
 The `kernel.excludeFromGenerate` set SHALL be honored by `sync-kernel.sh` on the same terms as `new-app.sh` — paths in the expanded exclusion set are never pushed into a consuming app, whether the consuming app is being generated or being synced. This keeps "what travels from the kernel" a single contract enforced identically by both endpoints.

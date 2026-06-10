@@ -41,6 +41,12 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 KERNEL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MANIFEST="$KERNEL_ROOT/kernel-manifest.json"
 
+# Shared manifest primitives: expand_entry, the manifest_* jq helpers, and the
+# preset-wins overlap set (design D6). MANIFEST is set above, so the helpers read
+# this absolute path.
+# shellcheck source=scripts/lib/manifest.sh
+. "$SCRIPT_DIR/lib/manifest.sh"
+
 # ─── Parse arguments (D1) ───────────────────────────────────────────────────
 NAME=""
 OUTPUT=""
@@ -124,39 +130,9 @@ cd "$KERNEL_ROOT"
 mkdir -p "$OUTPUT_ABS"
 
 # ─── Helpers ────────────────────────────────────────────────────────────────
-
-# Expand a manifest path entry into the set of on-disk files it covers, one per
-# line: `dir/**` → recursive find; other globs → nullglob+globstar; literals →
-# themselves if present. DUPLICATE of the canonical copy in
-# scripts/check-manifest.sh (also duplicated in scripts/generate-assert.sh) —
-# these are kernel-only scripts that cannot source a shared lib without it
-# travelling into generated apps. Keep all three in sync.
-expand_entry() {
-  local p="$1"
-  case "$p" in
-  */'**')
-    if [ -d "${p%/**}" ]; then
-      find "${p%/**}" -type f
-    fi
-    ;;
-  *[*?[]*)
-    shopt -s nullglob globstar
-    # shellcheck disable=SC2206
-    local matches=($p)
-    shopt -u nullglob globstar
-    if [ "${#matches[@]}" -gt 0 ]; then
-      local m
-      for m in "${matches[@]}"; do
-        [ -f "$m" ] && printf '%s\n' "$m"
-      done
-    fi
-    ;;
-  *)
-    [ -e "$p" ] && printf '%s\n' "$p"
-    ;;
-  esac
-  return 0
-}
+# expand_entry, the manifest_* queries, and the preset-wins overlap set
+# (OVERLAP_PRESET_WINS / is_overlap) come from scripts/lib/manifest.sh, sourced
+# above (design D6).
 
 # Copy a single file, creating parent directories and preserving mode (so the
 # executable bits on scripts/** and .githooks/** survive — task 4.3).
@@ -166,27 +142,11 @@ copy_file() {
   cp -p "$src" "$dest"
 }
 
-# Files declared in BOTH kernel.paths (post-flatten, i.e. same path) and the
-# preset's paths. Per D2, by inspection of the manifest this is exactly two
-# files; the preset's stack-aware variants win, so the kernel's copies are
-# skipped. Documented here as a literal set — growth requires a deliberate edit.
-OVERLAP_PRESET_WINS=(
-  ".prettierrc"
-  "package.json"
-)
-is_overlap() {
-  local target="$1" o
-  for o in "${OVERLAP_PRESET_WINS[@]}"; do
-    [ "$target" = "$o" ] && return 0
-  done
-  return 1
-}
-
 # ─── Build the kernel exclusion set (D2) ────────────────────────────────────
 kernel_paths=()
-while IFS= read -r line; do kernel_paths+=("$line"); done < <(jq -r '.kernel.paths[]' "$MANIFEST")
+while IFS= read -r line; do kernel_paths+=("$line"); done < <(manifest_kernel_paths)
 exclude_entries=()
-while IFS= read -r line; do exclude_entries+=("$line"); done < <(jq -r '.kernel.excludeFromGenerate // [] | .[]' "$MANIFEST")
+while IFS= read -r line; do exclude_entries+=("$line"); done < <(manifest_kernel_excludes)
 
 exclude_files=""
 if [ "${#exclude_entries[@]}" -gt 0 ]; then
@@ -212,7 +172,7 @@ done
 preset_path_entries=()
 while IFS= read -r line; do
   preset_path_entries+=("$line")
-done < <(jq -r --arg k "$PRESET_KEY" '.stack[$k].paths[]' "$MANIFEST")
+done < <(manifest_preset_paths "$PRESET_KEY")
 for entry in "${preset_path_entries[@]}"; do
   while IFS= read -r f; do
     [ -z "$f" ] && continue
@@ -222,21 +182,26 @@ for entry in "${preset_path_entries[@]}"; do
 done
 
 # ─── (4.2 + 4.3) Copy specs verbatim (kernel + preset) ──────────────────────
+# Process substitution (not a pipe) keeps the loop in the current shell, matching
+# the convention in generate-assert.sh/sync-kernel.sh.
 while IFS= read -r s; do
   [ -z "$s" ] && continue
   copy_file "$s" "$OUTPUT_ABS/$s"
-done < <(jq -r --arg k "$PRESET_KEY" '(.kernel.specs // []) + (.stack[$k].specs // []) | .[]' "$MANIFEST")
+done < <(
+  manifest_kernel_specs
+  manifest_preset_specs "$PRESET_KEY"
+)
 
 # ─── (4.4) Write instrument-tier stubs and app-tier templates ───────────────
 while IFS=$'\t' read -r target source; do
   [ -z "$target" ] && continue
   copy_file "$PRESET_KEY/$source" "$OUTPUT_ABS/$target"
-done < <(jq -r --arg k "$PRESET_KEY" '.stack[$k].instrumentStubs // {} | to_entries[] | "\(.key)\t\(.value)"' "$MANIFEST")
+done < <(manifest_preset_instrument_stubs "$PRESET_KEY")
 
 while IFS=$'\t' read -r target source; do
   [ -z "$target" ] && continue
   copy_file "$PRESET_KEY/$source" "$OUTPUT_ABS/$target"
-done < <(jq -r --arg k "$PRESET_KEY" '.stack[$k].appTemplates // {} | to_entries[] | "\(.key)\t\(.value)"' "$MANIFEST")
+done < <(manifest_preset_app_templates "$PRESET_KEY")
 
 # ─── (4.5) Substitute donor identity (D4) ───────────────────────────────────
 
@@ -323,6 +288,22 @@ if [ -e "$OUTPUT_ABS/openspec/changes/archive" ]; then
   echo "new-app.sh: openspec/changes/archive/ unexpectedly present in the emitted tree" >&2
   exit 1
 fi
+
+# ─── (5.1) Write the sync-state files (.kernel-version + hashes) ────────────
+# Record the kernel version this app was generated from, and the SHA-256 of
+# every kernel-/stack-tier file just emitted — the exact set sync-kernel.sh
+# tracks (manifest_copy_plan, shared so generation and sync cannot drift, D6).
+# Hashes are taken AFTER identity substitution, so a freshly-generated app is a
+# clean sync baseline (sync sees the emitted files as unmodified). Both files
+# are picked up by `git add -A` below and committed with the scaffold.
+KERNEL_VERSION="$(manifest_kernel_version "$KERNEL_ROOT")"
+{
+  while IFS=$'\t' read -r target _src; do
+    [ -n "$target" ] || continue
+    printf '%s\t%s\n' "$target" "$(sha256_file "$OUTPUT_ABS/$target")"
+  done < <(manifest_copy_plan "$PRESET_KEY" | awk -F'\t' '!seen[$1]++')
+} | write_hash_file "$OUTPUT_ABS/.kernel-sync-hashes.json" "$KERNEL_VERSION"
+printf '%s\n' "$KERNEL_VERSION" >"$OUTPUT_ABS/.kernel-version"
 
 # ─── (4.7) git init + single chore commit (D7) ──────────────────────────────
 # No author is configured here — git uses the local environment's identity (a

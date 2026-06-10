@@ -43,8 +43,11 @@ EOF
 
 if [ -n "$sh_files" ]; then
   if require shellcheck "install ShellCheck (brew install shellcheck / apt-get install shellcheck)"; then
+    # -x: follow `source`d files (scripts/lib/manifest.sh) via each consumer's
+    # `# shellcheck source=` hint, matching scripts/checks.sh. Without it a
+    # script that sources the shared lib is flagged SC1091 when staged alone.
     # shellcheck disable=SC2086 # staged paths have no spaces; word-splitting is intended
-    shellcheck $sh_files || fail=1
+    shellcheck -x $sh_files || fail=1
   fi
   if require shfmt "install shfmt v3.8.0 (https://github.com/mvdan/sh/releases)"; then
     # shellcheck disable=SC2086 # staged paths have no spaces; word-splitting is intended

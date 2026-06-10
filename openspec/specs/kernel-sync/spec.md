@@ -2,7 +2,13 @@
 tier: kernel
 ---
 
-## ADDED Requirements
+# kernel-sync Specification
+
+## Purpose
+
+Defines the contract `scripts/sync-kernel.sh` honors when re-pulling kernel-tier and stack-tier files into an existing consuming app: a deliberate kernel-version bump (never an unbounded HEAD pull) with a `--dry-run` upgrade path reported before any write; clobber-protection via a committed `.kernel-sync-hashes.json` SHA-256 record that refuses to overwrite locally-modified synced files unless `--accept-kernel` is passed; an explicit `--adopt-existing` bootstrap for apps that have no sync baseline yet; manifest semantics that mirror generation exactly (`excludeFromGenerate` honored, `appTemplates` re-applied, `instrumentStubs` never re-applied); additive-only behavior (a kernel-removed path is reported, not deleted); and a post-sync rewrite of `.kernel-version` and `.kernel-sync-hashes.json`.
+
+## Requirements
 
 ### Requirement: Sync is a deliberate kernel-version bump, never an unbounded HEAD pull
 

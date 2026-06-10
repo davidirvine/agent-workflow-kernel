@@ -76,6 +76,16 @@ preset_scan_globs() {
   if [ -d "$preset/faust" ]; then
     find "$preset/faust" -type f -name '*.dsp'
   fi
+  # appTemplates sources (design D3b): sync re-applies these verbatim WITHOUT
+  # identity substitution, so an un-substituted sentinel here would be copied
+  # literally into a consuming app. Scan them at the same gate that guards
+  # chassis source. The -d guard skips the generated-app layout, where the
+  # preset is "." and has no templates/ dir (the rendered target already landed
+  # at e.g. .github/workflows/ci.yml).
+  if [ -d "$preset/templates" ]; then
+    find "$preset/templates" -type f \
+      \( -name '*.yml' -o -name '*.yaml' -o -name '*.sh' -o -name '*.md' -o -name '*.toml' -o -name '*.json' \)
+  fi
 }
 
 # Allowlist: the single Shell file that is permitted to contain sentinel

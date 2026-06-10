@@ -116,3 +116,44 @@ Each preset entry in `kernel-manifest.json` SHALL declare an `appTemplates` fiel
 
 - **WHEN** `kernel.paths` contains the glob `scripts/**` and `excludeFromGenerate` contains the literal path `scripts/new-app.sh`
 - **THEN** the validator accepts the entry because `scripts/new-app.sh` (treated as a literal path) exists and is matched by the `scripts/**` glob in the expanded kernel-paths set
+
+### Requirement: The manifest declares sync's own app-state files
+
+`kernel-manifest.json` SHALL declare a `kernel.appStateFiles` array listing literal file paths that `sync-kernel.sh` (and `new-app.sh` on generation) writes in the consuming app to record its sync state — at minimum `.kernel-version` (the kernel version the app was last synced from) and `.kernel-sync-hashes.json` (the SHA-256 record used for clobber protection). These paths SHALL NOT appear in `kernel.paths`, any preset's `paths`, or any preset's `instrumentStubs` / `appTemplates` (they originate in the consuming app from sync, not from a copy).
+
+#### Scenario: appStateFiles declares the version stamp and hash record
+
+- **WHEN** `scripts/check-manifest.sh` runs
+- **THEN** it asserts `kernel.appStateFiles` exists and contains the literal entries `.kernel-version` and `.kernel-sync-hashes.json`, and that no entry collides with a path in `kernel.paths`, any preset's `paths`, `instrumentStubs`, or `appTemplates`
+
+### Requirement: The manifest declares files that generation customizes and sync must not re-apply
+
+`kernel-manifest.json` SHALL declare a `kernel.appOwnedFiles` array of app-relative target paths that `new-app.sh` customizes at generation (identity substitution, `package.json` mutation, the `.release-please-manifest.json` reset to `0.1.0`) and that `sync-kernel.sh` SHALL NOT re-apply. Each entry SHALL be a literal path that travels at generation (present in the expanded `kernel.paths` or a preset's flattened `paths`) and SHALL NOT also appear as an `appStateFiles`, `instrumentStubs`, or `appTemplates` target.
+
+#### Scenario: appOwnedFiles are validated as real, single-category paths
+
+- **WHEN** `scripts/check-manifest.sh` runs
+- **THEN** it asserts every `kernel.appOwnedFiles` entry is a literal path that matches an emitted file (expanded `kernel.paths` or a preset's flattened `paths`) and does not also appear as an `appStateFiles`, `instrumentStubs`, or `appTemplates` target
+
+### Requirement: `excludeFromGenerate` applies to sync as well as generation
+
+The `kernel.excludeFromGenerate` set SHALL be honored by `sync-kernel.sh` on the same terms as `new-app.sh` — paths in the expanded exclusion set are never pushed into a consuming app, whether the consuming app is being generated or being synced. This keeps "what travels from the kernel" a single contract enforced identically by both endpoints.
+
+#### Scenario: A kernel-only path is omitted from sync
+
+- **WHEN** sync runs and the manifest declares a path under `kernel.excludeFromGenerate` (e.g. `.github/workflows/**`, kernel-only scripts)
+- **THEN** the consuming app's copy of that path (or absence of it) is unchanged by sync; the kernel's version is not written
+
+### Requirement: `appTemplates` re-applies on sync; `instrumentStubs` does not
+
+`sync-kernel.sh` SHALL re-apply `appTemplates` entries on each sync, with clobber protection (so the kernel can ship a template update and consumers receive it on next sync). It SHALL NOT re-apply `instrumentStubs` entries — those are one-time-at-generation stubs; the instrument-tier files in a consuming app are app-owned content after generation and re-applying a stub would clobber the user's instrument.
+
+#### Scenario: Template update flows through sync
+
+- **WHEN** the kernel updates an `appTemplates` source (e.g. `templates/app-ci.yml`) and a consuming app then runs `sync-kernel.sh`
+- **THEN** the target file in the consuming app (e.g. `.github/workflows/ci.yml`) is updated to the new template content, subject to clobber protection
+
+#### Scenario: Sync does not touch the instrument
+
+- **WHEN** sync runs against an app with developed instrument files at the `instrumentStubs` target paths (e.g. a real `src/param-schema.js`)
+- **THEN** those paths are excluded from the sync's read, copy, and hash steps; the user's instrument content is unchanged
