@@ -224,6 +224,11 @@ while IFS=$'\t' read -r _rk _rv; do
   rec_vals+=("$_rv")
 done < <(jq -r '.hashes // {} | to_entries[] | "\(.key)\t\(.value)"' "$HASHES_FILE" 2>/dev/null)
 
+# Print the recorded hash for a target, or nothing if absent. Intentionally
+# returns 0 even on a miss: callers use it as `rec="$(recorded_hash "$t")"` under
+# `set -e`, and a non-zero return would abort the script via the command
+# substitution for every NEW file (whose target is not in the baseline). Callers
+# distinguish found/empty via `[ -n "$rec" ]`, not the exit code.
 recorded_hash() {
   local k="$1" i
   for i in "${!rec_keys[@]}"; do
@@ -261,6 +266,22 @@ while IFS=$'\t' read -r target src; do
     conflict_paths+=("$target")
   fi
 done <<<"$PLAN"
+
+# ─── Pre-flight: every plan source must exist before any write ──────────────
+# manifest_copy_plan only emits expanded paths that exist plus appTemplates
+# sources that check-manifest validates, so this should never fire — but verify
+# up front anyway, so a malformed kernel checkout aborts the sync cleanly here
+# rather than failing a `cp -p` mid-write and leaving the app partially synced
+# with a stale hash file (the hash file is written only after all copies).
+missing_src=()
+for i in "${!plan_src[@]}"; do
+  [ -f "${plan_src[$i]}" ] || missing_src+=("${plan_src[$i]}")
+done
+if [ "${#missing_src[@]}" -gt 0 ]; then
+  echo "sync-kernel.sh: kernel source file(s) missing — aborting before any write:" >&2
+  for m in "${missing_src[@]+"${missing_src[@]}"}"; do echo "    - $m" >&2; done
+  exit 1
+fi
 
 # ─── Kernel-deleted paths (4.8, D4) ─────────────────────────────────────────
 # Paths recorded in the app's baseline but no longer in the kernel's plan.

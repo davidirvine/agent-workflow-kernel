@@ -130,7 +130,7 @@ manifest_copy_plan() {
   # masked by a downstream filter pipeline (the filter loop would otherwise
   # always exit 0). Then filter app-owned targets in the current shell via a
   # here-string (no pipe).
-  local raw entry f rel target source line
+  local raw entry f rel target source plan_t plan_s
   raw="$(
     # Kernel-tier paths minus excludeFromGenerate and preset-wins overlap.
     while IFS= read -r entry; do
@@ -169,15 +169,17 @@ manifest_copy_plan() {
     done < <(manifest_preset_app_templates "$preset_key")
   )"
 
-  # Drop app-owned targets (D3d). grep -Fxq on the newline-set is portable (BSD
-  # awk -v mangles embedded newlines); ~60 lines, negligible cost. Here-string,
-  # not a pipe, so this runs in the current shell.
-  while IFS= read -r line; do
-    [ -n "$line" ] || continue
-    if [ -n "$owned" ] && printf '%s\n' "$owned" | grep -Fxq -- "${line%%$'\t'*}"; then
+  # Drop app-owned targets (D3d). Split the tab-separated fields with
+  # `IFS=$'\t' read` (portable across bash 3.2/4+) rather than a `%%` trick.
+  # grep -Fxq on the newline-set is portable (BSD awk -v mangles embedded
+  # newlines); ~60 lines, negligible cost. Here-string, not a pipe, so this runs
+  # in the current shell.
+  while IFS=$'\t' read -r plan_t plan_s; do
+    [ -n "$plan_t" ] || continue
+    if [ -n "$owned" ] && printf '%s\n' "$owned" | grep -Fxq -- "$plan_t"; then
       continue
     fi
-    printf '%s\n' "$line"
+    printf '%s\t%s\n' "$plan_t" "$plan_s"
   done <<<"$raw"
 }
 

@@ -210,11 +210,13 @@ elif ! grep -q "up to date" "$TMP/sync-dry.log"; then
 fi
 
 # ─── (5.9 / task 5.2c) Negative case: a locally-modified file blocks sync ───
-# A bumped copy of the kernel (rsync excludes node_modules/.git at any depth so
-# the copy is small but still contains the manifest, release manifest, every
-# kernel.paths source, and the full preset dir that sync reads).
+# A bumped copy of the kernel. `--filter=':- .gitignore'` honors the kernel's
+# .gitignore so build artifacts (dist/, public/, etc.) and node_modules stay out
+# of the copy, keeping the tempdir lean; .git is excluded explicitly (it is not
+# in .gitignore). The copy still contains the manifest, release manifest, every
+# (tracked) kernel.paths source, and the full preset dir that sync reads.
 KERNEL_COPY="$(mktemp -d)"
-if ! rsync -a --exclude node_modules --exclude .git "$KERNEL_ROOT"/ "$KERNEL_COPY"/ >"$TMP/rsync.log" 2>&1; then
+if ! rsync -a --filter=':- .gitignore' --exclude .git --exclude node_modules "$KERNEL_ROOT"/ "$KERNEL_COPY"/ >"$TMP/rsync.log" 2>&1; then
   cat "$TMP/rsync.log" >&2
   note "failed to copy the kernel repo for the sync negative case"
 else

@@ -46,6 +46,10 @@ EOF
   exit 2
   ;;
 esac
+if [ "$#" -gt 1 ]; then
+  echo "setup.sh: unexpected extra argument(s) after '$1' (expected --check or no flag)" >&2
+  exit 2
+fi
 
 # ─── Layout detection (mirrors check-identity-leak.sh, design D7) ───────────
 PRESETS=()
