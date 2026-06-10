@@ -39,13 +39,16 @@ cd "$(dirname "$0")/.."
 SHFMT_VERSION="v3.8.0"
 
 MODE="default"
-CI=0
+# Named BUILD_ONLY rather than CI to avoid shadowing the well-known CI env var
+# (GitHub Actions and others export CI=true): assigning to an already-exported
+# CI would change its value for any child process the script later spawns.
+BUILD_ONLY=0
 # Multi-arg parser: iterate over every positional arg so flag order is
 # irrelevant (--check --ci ≡ --ci --check) and an unknown flag still errors.
 while [ "$#" -gt 0 ]; do
   case "$1" in
   --check) MODE="check" ;;
-  --ci) CI=1 ;;
+  --ci) BUILD_ONLY=1 ;;
   -h | --help)
     cat <<'EOF'
 Usage: setup.sh [--check [--ci]]
@@ -68,7 +71,7 @@ done
 
 # --ci is a modifier on --check only; it is meaningless (and a usage error) on
 # its own or in default mode.
-if [ "$CI" -eq 1 ] && [ "$MODE" != "check" ]; then
+if [ "$BUILD_ONLY" -eq 1 ] && [ "$MODE" != "check" ]; then
   echo "setup.sh: --ci is valid only alongside --check" >&2
   exit 2
 fi
@@ -120,7 +123,7 @@ if [ "$MODE" = "check" ]; then
   # A Node-only CI runner needs node+npm to build; it does not need the lint,
   # format, manifest, or workflow tools, so verifying them there would be a
   # guaranteed false failure.
-  if [ "$CI" -eq 0 ]; then
+  if [ "$BUILD_ONLY" -eq 0 ]; then
     # shfmt, pinned to SHFMT_VERSION. First cross-check the pin against STACK.md
     # so this constant cannot silently drift from the documented version.
     if [ -f "STACK.md" ]; then
@@ -146,7 +149,7 @@ if [ "$MODE" = "check" ]; then
     command -v roborev >/dev/null 2>&1 || report "roborev" "see the roborev docs"
   fi
 
-  if [ "$CI" -eq 1 ]; then
+  if [ "$BUILD_ONLY" -eq 1 ]; then
     scope="build-essential"
     label="setup.sh --check --ci"
   else
