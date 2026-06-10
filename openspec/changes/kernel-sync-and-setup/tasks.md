@@ -59,4 +59,4 @@
 - [x] 9.1 Run `scripts/setup.sh --check` locally; iterate until all prereqs pass with the install hints working as described.
 - [x] 9.2 Run `scripts/generate-assert.sh` locally; verify the sync round-trip dry-run reports "up to date" and the negative case behaves as expected.
 - [x] 9.3 Run `scripts/check-manifest.sh` and `scripts/check-identity-leak.sh` locally; both pass.
-- [ ] 9.4 Push the branch; confirm CI: all four jobs (`lint-format`, `preset-leak-check`, `preset-build`, `generate-assert` — now extended with the sync round-trip steps) are green; `smoke-app` stub is still present and green.
+- [x] 9.4 Push the branch; confirm CI: all four jobs (`lint-format`, `preset-leak-check`, `preset-build`, `generate-assert` — now extended with the sync round-trip steps) are green; `smoke-app` stub is still present and green.
