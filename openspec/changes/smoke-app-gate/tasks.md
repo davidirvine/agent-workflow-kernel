@@ -5,8 +5,8 @@
 
 ## 2. Pipeline script
 
-- [ ] 2.1 Add `scripts/smoke-app.sh`: a committed bash script (`set -euo pipefail`) that generates an app with `new-app.sh` into a `mktemp -d` workspace outside the kernel checkout, runs the generated app's `setup.sh --check --ci`, then runs `npm install` + `npm run build` inside it. Reuse generate-assert.sh's tempdir discipline (tear down on success, leave in place with a printed pointer on failure) and its headless git-identity exports (D3).
-- [ ] 2.2 Assert the build produced an artifact (the generated app's `dist/` exists and is non-empty) before declaring success, and print a clear ✓/✗ summary (D5).
+- [x] 2.1 Add `scripts/smoke-app.sh`: a committed bash script (`set -euo pipefail`) that generates an app with `new-app.sh` into a `mktemp -d` workspace outside the kernel checkout, runs the generated app's `setup.sh --check --ci`, then runs `npm install` + `npm run build` inside it. Reuse generate-assert.sh's tempdir discipline (tear down on success, leave in place with a printed pointer on failure) and its headless git-identity exports (D3).
+- [x] 2.2 Assert the build produced an artifact (the generated app's `dist/` exists and is non-empty) before declaring success, and print a clear ✓/✗ summary (D5).
 - [ ] 2.3 Run `shfmt -i 2 -w scripts/smoke-app.sh` then `shellcheck -x scripts/smoke-app.sh`; resolve all findings. Confirm `scripts/checks.sh` stays green — it discovers scripts via `git ls-files '*.sh'`, so the new files are picked up automatically.
 - [ ] 2.4 Add `scripts/smoke-app.sh` to `kernel.excludeFromGenerate` in `kernel-manifest.json` (mirroring `generate-assert.sh`) so it does not travel to generated apps; run `npx prettier --write kernel-manifest.json`, then `scripts/check-manifest.sh` and `scripts/generate-assert.sh` to confirm both stay green after the manifest change.
 
