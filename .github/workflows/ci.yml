@@ -125,12 +125,26 @@ jobs:
       - name: Generate an app and assert the emitted tree + sync round-trip
         run: scripts/generate-assert.sh
 
-  # Pending stub (D4): present and green from day one so the harness slot
-  # exists in every CI run. Slices 3-5 fill in real pipeline stages by
-  # editing this one job rather than adding new ones. Slice 2 deliberately
-  # does NOT touch this stub (task 10.4).
+  # Slice-5 gate (design D1/D6): the end-to-end "a freshly generated app
+  # builds" check. scripts/smoke-app.sh generates an app with new-app.sh into a
+  # throwaway workspace, runs the generated app's `setup.sh --check --ci`
+  # (build-only prereq scope, D4), then `npm install` + `npm run build` and
+  # asserts a non-empty dist/ artifact (D5). The job provisions ONLY Node from
+  # .nvmrc — no FAUST (it ships as the @grame/faustwasm npm dep, D10) and no
+  # workflow-authoring toolchain. No `cache: npm`: the build runs in a throwaway
+  # workspace against the generator's intentionally-stale lockfile (D2/D6), so
+  # caching would key on a lockfile that does not reflect the resolved tree.
+  # `npm install` (not `npm ci`) for the same stale-lockfile reason (D2). This
+  # fills the existing smoke-app job rather than adding a new one (D1).
   smoke-app:
     name: smoke-app
     runs-on: ubuntu-latest
     steps:
-      - run: 'echo "smoke-app: pending until slice 5"'
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Generate an app and build it end-to-end
+        run: scripts/smoke-app.sh

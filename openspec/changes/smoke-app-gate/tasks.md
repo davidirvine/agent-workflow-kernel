@@ -12,7 +12,7 @@
 
 ## 3. CI wiring
 
-- [ ] 3.1 Rewrite the `smoke-app` job body in `.github/workflows/ci.yml`: replace the `echo "smoke-app: pending until slice 5"` step with `actions/checkout@v4`, then `actions/setup-node` (`node-version-file: .nvmrc`, no `cache: npm` — the generated lockfile is stale, D6), then a single step that runs `scripts/smoke-app.sh`. Also replace the "Pending stub (D4)" comment block above the job (lines ~128–131) with a description of its live behavior. Add no new job; touch only the `smoke-app` job (D1, D6).
+- [x] 3.1 Rewrite the `smoke-app` job body in `.github/workflows/ci.yml`: replace the `echo "smoke-app: pending until slice 5"` step with `actions/checkout@v4`, then `actions/setup-node` (`node-version-file: .nvmrc`, no `cache: npm` — the generated lockfile is stale, D6), then a single step that runs `scripts/smoke-app.sh`. Also replace the "Pending stub (D4)" comment block above the job (lines ~128–131) with a description of its live behavior. Add no new job; touch only the `smoke-app` job (D1, D6).
 
 ## 4. Documentation
 
