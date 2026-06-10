@@ -16,9 +16,19 @@
 # exit non-zero on any miss. `faust` is deliberately ABSENT — it ships as an npm
 # dep, not a system tool (STACK.md).
 #
+# --check --ci mode: a build-only scope. Verify ONLY the prereqs needed to
+# install deps and build the app — node (per .nvmrc) and npm — and skip the
+# workflow-authoring tools (shfmt, shellcheck, jq, gh, openspec, roborev) and
+# the STACK.md shfmt-pin cross-check. This is the scope a Node-only CI runner
+# (the kernel's smoke-app gate, or a consumer's build-only smoke test) can
+# satisfy without provisioning the full toolchain (design D4). `--ci` is valid
+# only alongside `--check`; order is irrelevant. The full `--check` and default
+# mode are unchanged.
+#
 # Usage:
-#   scripts/setup.sh            # default mode
-#   scripts/setup.sh --check    # verify prereqs only
+#   scripts/setup.sh              # default mode
+#   scripts/setup.sh --check      # verify the full prereq table
+#   scripts/setup.sh --check --ci # verify only build-essential prereqs (node, npm)
 
 set -euo pipefail
 
@@ -29,29 +39,39 @@ cd "$(dirname "$0")/.."
 SHFMT_VERSION="v3.8.0"
 
 MODE="default"
-# Reject extra arguments up front (before parsing $1), so the message does not
-# depend on $1's value (e.g. an empty first arg).
-if [ "$#" -gt 1 ]; then
-  echo "setup.sh: too many arguments (expected --check or no flag)" >&2
+CI=0
+# Multi-arg parser: iterate over every positional arg so flag order is
+# irrelevant (--check --ci ≡ --ci --check) and an unknown flag still errors.
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+  --check) MODE="check" ;;
+  --ci) CI=1 ;;
+  -h | --help)
+    cat <<'EOF'
+Usage: setup.sh [--check [--ci]]
+
+  (no flag)      default mode: npm ci (root + presets), preset prebuild, install hooks
+  --check        verify the full global prereq table at required versions; exit non-zero on any miss
+  --check --ci   build-only scope: verify only node (per .nvmrc) and npm; skip the
+                 workflow-authoring tools (shfmt/shellcheck/jq/gh/openspec/roborev). For
+                 Node-only CI runners (the smoke-app gate, or a consumer's build smoke test)
+EOF
+    exit 0
+    ;;
+  *)
+    echo "setup.sh: unknown argument '$1' (expected --check, --check --ci, or no flag)" >&2
+    exit 2
+    ;;
+  esac
+  shift
+done
+
+# --ci is a modifier on --check only; it is meaningless (and a usage error) on
+# its own or in default mode.
+if [ "$CI" -eq 1 ] && [ "$MODE" != "check" ]; then
+  echo "setup.sh: --ci is valid only alongside --check" >&2
   exit 2
 fi
-case "${1:-}" in
-"") ;;
---check) MODE="check" ;;
--h | --help)
-  cat <<'EOF'
-Usage: setup.sh [--check]
-
-  (no flag)   default mode: npm ci (root + presets), preset prebuild, install hooks
-  --check     verify global prereqs at their required versions; exit non-zero on any miss
-EOF
-  exit 0
-  ;;
-*)
-  echo "setup.sh: unknown argument '$1' (expected --check or no flag)" >&2
-  exit 2
-  ;;
-esac
 
 # ─── Layout detection (mirrors check-identity-leak.sh, design D7) ───────────
 PRESETS=()
@@ -96,35 +116,48 @@ if [ "$MODE" = "check" ]; then
   # npm (any version; bundled with node).
   command -v npm >/dev/null 2>&1 || report "npm" "install Node, which bundles npm"
 
-  # shfmt, pinned to SHFMT_VERSION. First cross-check the pin against STACK.md
-  # so this constant cannot silently drift from the documented version.
-  if [ -f "STACK.md" ]; then
-    if ! grep -Fq "shfmt $SHFMT_VERSION" STACK.md; then
-      echo "INCONSISTENT: STACK.md does not document the shfmt pin '$SHFMT_VERSION' — update one to match the other" >&2
-      fails=$((fails + 1))
+  # The workflow-authoring toolchain — skipped under --ci (build-only scope, D4).
+  # A Node-only CI runner needs node+npm to build; it does not need the lint,
+  # format, manifest, or workflow tools, so verifying them there would be a
+  # guaranteed false failure.
+  if [ "$CI" -eq 0 ]; then
+    # shfmt, pinned to SHFMT_VERSION. First cross-check the pin against STACK.md
+    # so this constant cannot silently drift from the documented version.
+    if [ -f "STACK.md" ]; then
+      if ! grep -Fq "shfmt $SHFMT_VERSION" STACK.md; then
+        echo "INCONSISTENT: STACK.md does not document the shfmt pin '$SHFMT_VERSION' — update one to match the other" >&2
+        fails=$((fails + 1))
+      fi
     fi
+    if ! command -v shfmt >/dev/null 2>&1; then
+      report "shfmt" "install shfmt $SHFMT_VERSION (brew install shfmt, or https://github.com/mvdan/sh/releases)"
+    else
+      shfmt_ver="$(shfmt --version 2>/dev/null | tr -d '[:space:]')"
+      if [ "$shfmt_ver" != "$SHFMT_VERSION" ]; then
+        report_version "shfmt" "want $SHFMT_VERSION, have ${shfmt_ver:-unknown} — brew install shfmt or https://github.com/mvdan/sh/releases"
+      fi
+    fi
+
+    # Presence-only prereqs.
+    command -v shellcheck >/dev/null 2>&1 || report "shellcheck" "install via 'brew install shellcheck'"
+    command -v jq >/dev/null 2>&1 || report "jq" "install via 'brew install jq'"
+    command -v gh >/dev/null 2>&1 || report "gh" "install via 'brew install gh' then 'gh auth login'"
+    command -v openspec >/dev/null 2>&1 || report "openspec" "see the openspec docs"
+    command -v roborev >/dev/null 2>&1 || report "roborev" "see the roborev docs"
   fi
-  if ! command -v shfmt >/dev/null 2>&1; then
-    report "shfmt" "install shfmt $SHFMT_VERSION (brew install shfmt, or https://github.com/mvdan/sh/releases)"
+
+  if [ "$CI" -eq 1 ]; then
+    scope="build-essential"
+    label="setup.sh --check --ci"
   else
-    shfmt_ver="$(shfmt --version 2>/dev/null | tr -d '[:space:]')"
-    if [ "$shfmt_ver" != "$SHFMT_VERSION" ]; then
-      report_version "shfmt" "want $SHFMT_VERSION, have ${shfmt_ver:-unknown} — brew install shfmt or https://github.com/mvdan/sh/releases"
-    fi
+    scope="all"
+    label="setup.sh --check"
   fi
-
-  # Presence-only prereqs.
-  command -v shellcheck >/dev/null 2>&1 || report "shellcheck" "install via 'brew install shellcheck'"
-  command -v jq >/dev/null 2>&1 || report "jq" "install via 'brew install jq'"
-  command -v gh >/dev/null 2>&1 || report "gh" "install via 'brew install gh' then 'gh auth login'"
-  command -v openspec >/dev/null 2>&1 || report "openspec" "see the openspec docs"
-  command -v roborev >/dev/null 2>&1 || report "roborev" "see the roborev docs"
-
   if [ "$fails" -ne 0 ]; then
-    echo "setup.sh --check: $fails prereq(s) unsatisfied" >&2
+    echo "$label: $fails $scope prereq(s) unsatisfied" >&2
     exit 1
   fi
-  echo "setup.sh --check: all prereqs satisfied"
+  echo "$label: all $scope prereqs satisfied"
   exit 0
 fi
 
