@@ -16,5 +16,5 @@
 
 ## 4. Documentation
 
-- [ ] 4.1 Update `STACK.md`: change the smoke-app gate description from "remains a pending no-op stub. Slice 5 turns it on." to its live behavior (`new-app.sh → setup.sh --check --ci → build`), in both the Completion-gate test commands and Feature-level verification sections; document the local-run command (`scripts/smoke-app.sh`) and the new `setup.sh --check --ci` scope.
-- [ ] 4.2 Run `npx prettier --write STACK.md` and confirm `scripts/checks.sh` is green.
+- [x] 4.1 Update `STACK.md`: change the smoke-app gate description from "remains a pending no-op stub. Slice 5 turns it on." to its live behavior (`new-app.sh → setup.sh --check --ci → build`), in both the Completion-gate test commands and Feature-level verification sections; document the local-run command (`scripts/smoke-app.sh`) and the new `setup.sh --check --ci` scope.
+- [x] 4.2 Run `npx prettier --write STACK.md` and confirm `scripts/checks.sh` is green.
