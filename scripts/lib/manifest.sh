@@ -40,7 +40,13 @@ expand_entry() {
     # a shared lib function, so a caller's own glob settings must not leak out.
     # (globstar is bash-4+; this branch only fires for non-`/**` glob entries.)
     (
-      shopt -s nullglob globstar
+      # Set nullglob unconditionally; globstar is bash-4+ (invalid on bash 3.2),
+      # so set it best-effort — failing it here under the inherited set -e would
+      # abort the subshell and silently yield no output. `**` patterns therefore
+      # only recurse on bash 4+, but the manifest's `dir/**` entries are handled
+      # by the find branch above, so this degrades safely.
+      shopt -s nullglob
+      shopt -s globstar 2>/dev/null || true
       # shellcheck disable=SC2206
       # (intentional: $p IS a glob; word-splitting the unquoted expansion is the
       # wildcard match)
@@ -60,14 +66,14 @@ expand_entry() {
 }
 
 # ─── Thin jq-query helpers (read $MANIFEST) ──────────────────────────────────
-manifest_kernel_paths() { jq -r '.kernel.paths[]' "$MANIFEST"; }
+manifest_kernel_paths() { jq -r '.kernel.paths // [] | .[]' "$MANIFEST"; }
 manifest_kernel_excludes() { jq -r '.kernel.excludeFromGenerate // [] | .[]' "$MANIFEST"; }
 manifest_kernel_specs() { jq -r '.kernel.specs // [] | .[]' "$MANIFEST"; }
 manifest_app_state_files() { jq -r '.kernel.appStateFiles // [] | .[]' "$MANIFEST"; }
 manifest_app_owned_files() { jq -r '.kernel.appOwnedFiles // [] | .[]' "$MANIFEST"; }
 
 manifest_preset_keys() { jq -r '.stack | keys[]' "$MANIFEST"; }
-manifest_preset_paths() { jq -r --arg k "$1" '.stack[$k].paths[]' "$MANIFEST"; }
+manifest_preset_paths() { jq -r --arg k "$1" '.stack[$k].paths // [] | .[]' "$MANIFEST"; }
 manifest_preset_specs() { jq -r --arg k "$1" '.stack[$k].specs // [] | .[]' "$MANIFEST"; }
 
 # instrumentStubs / appTemplates emit "<target>\t<source>" lines.

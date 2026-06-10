@@ -29,6 +29,12 @@ cd "$(dirname "$0")/.."
 SHFMT_VERSION="v3.8.0"
 
 MODE="default"
+# Reject extra arguments up front (before parsing $1), so the message does not
+# depend on $1's value (e.g. an empty first arg).
+if [ "$#" -gt 1 ]; then
+  echo "setup.sh: too many arguments (expected --check or no flag)" >&2
+  exit 2
+fi
 case "${1:-}" in
 "") ;;
 --check) MODE="check" ;;
@@ -46,10 +52,6 @@ EOF
   exit 2
   ;;
 esac
-if [ "$#" -gt 1 ]; then
-  echo "setup.sh: unexpected extra argument(s) after '$1' (expected --check or no flag)" >&2
-  exit 2
-fi
 
 # ─── Layout detection (mirrors check-identity-leak.sh, design D7) ───────────
 PRESETS=()
