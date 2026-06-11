@@ -17,5 +17,5 @@
 
 ## 4. Document the generated workflow
 
-- [ ] 4.1 Add a note to the "Using new-app.sh" section of `STACK.md` stating that the generated app also receives `.github/workflows/release-please.yml` (sourced from the preset's `appTemplates`), providing the runner for the release-please config that already travels.
-- [ ] 4.2 Lint/format any edited Markdown (`npx prettier --write <file>`).
+- [x] 4.1 Add a note to the "Using new-app.sh" section of `STACK.md` stating that the generated app also receives `.github/workflows/release-please.yml` (sourced from the preset's `appTemplates`), providing the runner for the release-please config that already travels.
+- [x] 4.2 Lint/format any edited Markdown (`npx prettier --write <file>`).
