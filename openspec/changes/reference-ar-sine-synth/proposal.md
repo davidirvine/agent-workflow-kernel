@@ -8,7 +8,7 @@ The `svelte-faust-synth` preset's **reference instrument** is currently a contin
 - `faust/synth.dsp`: drop the `pitch = select2(int(gate), frequency, freq)` drone/key switch — pitch is now just `freq`. Replace the constant `waveOut * 0.25` with an attack/release amplitude envelope gated by `gate` (`en.ar(attack, release, gate)`: rises to peak while held, releases on key-up — not a decay-to-zero pluck).
 - `src/param-schema.js`: **remove** the `frequency` knob; **add** two store-backed knobs `attack` and `release`. Keep the `waveform` switch (default `0` = sine, so the instrument ships a sine out of the box) and the `modWheel` controller.
 - `src/components/InstrumentPanels.svelte`: replace the single `frequency` knob with `attack` and `release` knobs; keep the waveform selector row and the chassis-owned scope.
-- Update the instrument-owned tests that name `frequency` (`src/state/synth.test.js`, `src/patches/storage.test.js`, `src/power-off-silence.test.js`) to the new params, and add coverage for the envelope behavior.
+- Update the tests that name `frequency` (`src/state/synth.test.js`, `src/patches/storage.test.js`, `src/power-off-silence.test.js`, and `src/components/PatchControl.test.js`, which uses `frequency` only as a representative store param in its save/load/dirty-marker cases) to the new params, and add coverage for the envelope behavior.
 - **Out of scope:** `stubs/synth.dsp` and `stubs/param-schema.js` are untouched — the generated-app stub stays deliberately silent. No chassis files change. The pitch wheel and scope already work and need no changes.
 
 ## Capabilities
@@ -30,6 +30,7 @@ The `svelte-faust-synth` preset's **reference instrument** is currently a contin
   - `presets/svelte-faust-synth/src/state/synth.test.js`
   - `presets/svelte-faust-synth/src/patches/storage.test.js`
   - `presets/svelte-faust-synth/src/power-off-silence.test.js`
-  - `presets/svelte-faust-synth/src/chassis-purity.test.js` (verify only — confirm its `frequency` usage is an instrument-literal leak check, not a fixture that must change)
+  - `presets/svelte-faust-synth/src/components/PatchControl.test.js` (re-point only — uses `frequency` purely as a representative store param in its save/load/dirty-marker cases; the assertions are param-name-agnostic)
+  - `presets/svelte-faust-synth/src/chassis-purity.test.js` (verify-first — its `frequency` usage is an instrument-literal leak check, not a fixture; the only change is swapping the hard-coded sample literal in the blocklist-derivation assertion to a current param name)
 - Gates: `preset-build` (prettier + chassis-purity + power-off-silence vitest) must stay green; the FAUST DSP recompiles via `@grame/faustwasm`.
 - No dependency, API, or kernel-contract changes. The five universal engine params (`freq`, `gate`, `modWheel`, `outputPeak`, `mixerPeak`) are preserved.

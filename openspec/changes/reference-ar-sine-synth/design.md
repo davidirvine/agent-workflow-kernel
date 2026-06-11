@@ -45,7 +45,7 @@ Retain the `waveform` `switch` (and the `WAVEFORMS` list / `ba.selectn` over `os
 
 ### D5: Test updates scoped to instrument-owned files
 
-`frequency` is named only in instrument-owned files: `param-schema.js`, `InstrumentPanels.svelte`, and the instrument-owned tests `src/state/synth.test.js`, `src/patches/storage.test.js`, `src/power-off-silence.test.js`. Re-point those to `attack`/`release` (and `waveform` where a switch is needed) and add coverage that `gate` drives the envelope (silent at `gate` low, audible at `gate` high). `src/chassis-purity.test.js` is **verify-only**: confirm its `frequency` usage is an instrument-literal leak assertion (proving the chassis does *not* name it), not a fixture that must change; if it hard-codes `frequency` as the sample literal, swap it for a current param name.
+`frequency` is named in `param-schema.js`, `InstrumentPanels.svelte`, and the tests `src/state/synth.test.js`, `src/patches/storage.test.js`, `src/power-off-silence.test.js`, and `src/components/PatchControl.test.js` (a chassis-component test that uses `frequency` only as a representative store param in its save/load/dirty-marker cases). Re-point those to `attack`/`release` (and `waveform` where a switch is needed) and add coverage that `gate` drives the envelope (silent at `gate` low, audible at `gate` high). `src/chassis-purity.test.js` is **verify-only**: confirm its `frequency` usage is an instrument-literal leak assertion (proving the chassis does *not* name it), not a fixture that must change; if it hard-codes `frequency` as the sample literal, swap it for a current param name.
 
 ### D6: Power-on silence is intended
 
