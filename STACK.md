@@ -133,6 +133,17 @@ separate FAUST install — the `prebuild` step compiles the DSP via the
 The instrument starts as a silent stub DSP until you fill in
 `faust/synth.dsp` and `src/param-schema.js`.
 
+The generated app also receives `.github/workflows/release-please.yml`, sourced
+from the preset's `appTemplates` (alongside `.github/workflows/ci.yml`). It is the
+**runner** for the release-please **config** that already travels into the app
+(`release-please-config.json` + `.release-please-manifest.json`): it runs
+`googleapis/release-please-action@v4` on push to `main` (manifest mode, no
+duplicated release settings) to turn the app's Conventional Commit history into
+release PRs, version bumps, a `CHANGELOG.md`, and tags. Note the `GITHUB_TOKEN`
+caveat documented in the template header — the release PR opened with the default
+token does not trigger the app's `ci.yml`; swap in a PAT/app token if you want CI
+on release PRs.
+
 ## Using sync-kernel.sh
 
 `scripts/sync-kernel.sh` re-pulls kernel-tier + stack-tier files into an

@@ -1,0 +1,40 @@
+# Release automation for an app generated from agent-workflow-kernel + svelte-faust-synth.
+#
+# new-app.sh writes this file into a generated app at
+# .github/workflows/release-please.yml. It is the *runner* for the release-please
+# *config* that already travels into the app (release-please-config.json and
+# .release-please-manifest.json in kernel.paths). Together they turn the app's
+# Conventional Commit history on main into release PRs, version bumps, a
+# CHANGELOG.md, and tags.
+#
+# release-please-action@v4 defaults to manifest mode: it auto-detects the two
+# config files at the repo root, so this workflow carries no duplicated release
+# settings (the release-type `node` and changelog path live in the config).
+#
+# GITHUB_TOKEN caveat: by GitHub design, the release PR opened with the default
+# GITHUB_TOKEN does not itself trigger further workflow runs, so the app's ci.yml
+# does NOT run on the release PR. The PR is still opened/updated and tags
+# correctly on merge — only CI on the release PR itself is skipped. A consumer
+# who wants CI on release PRs can swap in a PAT or GitHub App token here.
+
+name: release-please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
