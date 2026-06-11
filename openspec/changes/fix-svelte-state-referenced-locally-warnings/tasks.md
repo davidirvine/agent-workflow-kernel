@@ -10,9 +10,9 @@
 
 ## 3. Verify the build is clean and enforced
 
-- [ ] 3.1 Run `npm run build` inside `presets/svelte-faust-synth/` and confirm it exits 0 with zero `state_referenced_locally` (or any other Svelte compiler) warnings and still produces `dist/` artifacts.
-- [ ] 3.2 Confirm the gate bites: temporarily reintroduce one warning (e.g. revert a single alias to a plain `const`), run `npm run build`, observe a non-zero exit, then restore the fix. (Verification only — no commit.)
-- [ ] 3.3 Run the preset gates — the power-off-silence and chassis-purity vitest plus the preset prettier check — and confirm they pass, demonstrating no behavioral drift.
+- [x] 3.1 Run `npm run build` inside `presets/svelte-faust-synth/` and confirm it exits 0 with zero `state_referenced_locally` (or any other Svelte compiler) warnings and still produces `dist/` artifacts.
+- [x] 3.2 Confirm the gate bites: temporarily reintroduce one warning (e.g. revert a single alias to a plain `const`), run `npm run build`, observe a non-zero exit, then restore the fix. (Verification only — no commit.)
+- [x] 3.3 Run the preset gates — the power-off-silence and chassis-purity vitest plus the preset prettier check — and confirm they pass, demonstrating no behavioral drift.
 
 ## 4. Verify against the artifacts
 
