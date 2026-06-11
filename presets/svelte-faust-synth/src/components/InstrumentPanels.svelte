@@ -2,8 +2,9 @@
   // InstrumentPanels: the reference instrument's panel layout (Tier 3). Injected
   // into the generic Shell as its `children` snippet and consumes the chassis
   // contract the Shell hands back. Deliberately minimal — one panel with the
-  // frequency knob and waveform selector, plus the chassis-owned scope — so the
-  // chassis seam is visible without instrument detail drowning it out.
+  // attack/release envelope knobs and waveform selector, plus the chassis-owned
+  // scope — so the chassis seam is visible without instrument detail drowning it
+  // out.
   //
   // Every instrument param-name literal lives here, on the instrument side of
   // the seam (chassis-architecture spec): the per-panel midiState calls the
@@ -34,8 +35,8 @@
     scope,
   } = $props()
 
-  // MIDI state for the frequency knob (the one ccScalable knob the schema declares).
-  let freqMidiState = $derived(midiStateFor('frequency'))
+  // MIDI state for the two ccScalable envelope knobs the schema declares.
+  let knobMidiState = $derived(midiStateFor('attack', 'release'))
 
   function selectWaveform(/** @type {number} */ i) {
     onParamChange?.({ param: 'waveform', value: i })
@@ -60,22 +61,38 @@
       {/each}
     </div>
 
-    <div class="freq-row">
+    <div class="knob-row">
       <Knob
-        label="frequency"
-        min={20}
-        max={2000}
-        default={220}
-        value={synthParams.frequency}
+        label="attack"
+        min={0.001}
+        max={1}
+        default={0.01}
+        value={synthParams.attack}
         scale="log"
-        unit="Hz"
+        unit="s"
         bipolar={false}
-        externalValue={freqMidiState.frequency?.externalValue}
-        learningMidi={freqMidiState.frequency?.learningMidi}
-        assignedCc={freqMidiState.frequency?.assignedCc ?? null}
+        externalValue={knobMidiState.attack?.externalValue}
+        learningMidi={knobMidiState.attack?.learningMidi}
+        assignedCc={knobMidiState.attack?.assignedCc ?? null}
         disabled={!powered}
-        onchange={(e) => onParamChange?.({ param: 'frequency', value: e.value })}
-        oncontextmenu={() => onKnobContextMenu?.('frequency')}
+        onchange={(e) => onParamChange?.({ param: 'attack', value: e.value })}
+        oncontextmenu={() => onKnobContextMenu?.('attack')}
+      />
+      <Knob
+        label="release"
+        min={0.01}
+        max={2}
+        default={0.3}
+        value={synthParams.release}
+        scale="log"
+        unit="s"
+        bipolar={false}
+        externalValue={knobMidiState.release?.externalValue}
+        learningMidi={knobMidiState.release?.learningMidi}
+        assignedCc={knobMidiState.release?.assignedCc ?? null}
+        disabled={!powered}
+        onchange={(e) => onParamChange?.({ param: 'release', value: e.value })}
+        oncontextmenu={() => onKnobContextMenu?.('release')}
       />
     </div>
   </div>
@@ -155,9 +172,10 @@
     cursor: not-allowed;
   }
 
-  .freq-row {
+  .knob-row {
     display: flex;
     justify-content: center;
+    gap: 16px;
     padding: 4px;
   }
 

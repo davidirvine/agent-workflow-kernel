@@ -8,7 +8,7 @@
 
 ## 3. Panels: attack/release knobs
 
-- [ ] 3.1 In `presets/svelte-faust-synth/src/components/InstrumentPanels.svelte`, replace the single `frequency` `Knob` (and its `freqMidiState`/`midiStateFor('frequency')` wiring) with two `Knob`s for `attack` and `release` bound to `synthParams`, each wired through `midiStateFor(...)`, `onParamChange`, and `onKnobContextMenu` the same way; keep the waveform selector row and the chassis-owned `scope` snippet. Update the panel's comment about which knobs it renders. Run prettier; commit `feat(preset): render attack/release knobs in the reference panel`.
+- [x] 3.1 In `presets/svelte-faust-synth/src/components/InstrumentPanels.svelte`, replace the single `frequency` `Knob` (and its `freqMidiState`/`midiStateFor('frequency')` wiring) with two `Knob`s for `attack` and `release` bound to `synthParams`, each wired through `midiStateFor(...)`, `onParamChange`, and `onKnobContextMenu` the same way; keep the waveform selector row and the chassis-owned `scope` snippet. Update the panel's comment about which knobs it renders. Run prettier; commit `feat(preset): render attack/release knobs in the reference panel`.
 
 ## 4. Tests: re-point off frequency, cover the envelope
 
