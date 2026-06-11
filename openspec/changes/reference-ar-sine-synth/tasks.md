@@ -18,4 +18,4 @@
 
 ## 5. Gates
 
-- [ ] 5.1 Run the preset gates green: `cd presets/svelte-faust-synth && npm run build` (recompiles the DSP), the preset prettier check, the traveling `chassis-purity` test, and the `power-off-silence` vitest. From the kernel root run `scripts/check-manifest.sh` and `scripts/check-identity-leak.sh` and `shellcheck`/`shfmt` if any script changed (none expected). Fix any failure at its source and amend the relevant task's commit (do not introduce a frequency literal back into the chassis).
+- [x] 5.1 Run the preset gates green: `cd presets/svelte-faust-synth && npm run build` (recompiles the DSP), the preset prettier check, the traveling `chassis-purity` test, and the `power-off-silence` vitest. From the kernel root run `scripts/check-manifest.sh` and `scripts/check-identity-leak.sh` and `shellcheck`/`shfmt` if any script changed (none expected). Fix any failure at its source and amend the relevant task's commit (do not introduce a frequency literal back into the chassis).
