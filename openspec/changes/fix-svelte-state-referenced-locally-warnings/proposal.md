@@ -6,7 +6,7 @@ The `svelte-faust-synth` preset's `WheelsPanel.svelte` and `PatchControl.svelte`
 
 - In `presets/svelte-faust-synth/src/components/WheelsPanel.svelte`, wrap the three `wheelStorage.*` method aliases in `$derived` so the references are reactive-correct and the compiler no longer warns.
 - In `presets/svelte-faust-synth/src/components/PatchControl.svelte`, wrap the five `storage.*` method aliases in `$derived` for the same reason.
-- All call sites stay unchanged (the stated intent of the existing aliasing comments); the only change is making the alias bindings reactive.
+- All call sites stay unchanged (the stated intent of the existing aliasing comments); the only change is making the alias bindings reactive — with one exception in `WheelsPanel`, where the component seeds local state from storage at setup (`let physics = $state(loadWheelPhysics())`). Once the alias is a `$derived`, that one-time read re-trips the same warning at the initialiser, so it is wrapped in Svelte's `untrack` to record the deliberate snapshot read.
 - Add an `onwarn` handler to the preset's `svelte.config.js` (today an empty `{}`) that promotes any Svelte compiler warning to a build error, so a regressed warning **fails** `npm run build` rather than being printed and ignored. Because `svelte.config.js` is chassis content that travels via `new-app.sh` and `sync-kernel.sh`, this gate is inherited by every consuming app.
 - Strengthen the preset-portability "self-contained buildable unit" guarantee so the bare preset build is required to emit **no** Svelte compiler warnings, turning warning-free build from an incidental property into an enforceable, portable contract.
 

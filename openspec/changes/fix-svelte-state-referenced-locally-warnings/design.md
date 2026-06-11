@@ -11,7 +11,7 @@ In this codebase the warning is a false positive — the adapters are constructe
 **Goals:**
 
 - Eliminate the eight `state_referenced_locally` warnings from the bare preset build.
-- Keep every call site unchanged — the fix is confined to the eight alias bindings.
+- Keep every call site unchanged — the fix is confined to the eight alias bindings, plus one `$state` initialiser in `WheelsPanel` (see D1) whose one-time read of the now-reactive `loadWheelPhysics` alias must be `untrack`ed.
 - Make "the preset build is warning-free" an enforceable spec guarantee rather than an incidental property, so a future regression is caught by a gate.
 
 **Non-Goals:**
@@ -24,7 +24,9 @@ In this codebase the warning is a false positive — the adapters are constructe
 
 ### D1: Wrap each alias in `$derived` rather than removing the aliases or suppressing the warning
 
-The reference becomes reactive-correct: `const savePatch = $derived(storage.savePatch)`. Reading and calling `savePatch(...)` continues to work (a `$derived` holding a function value is callable), and `let physics = $state(loadWheelPhysics())` still initialises correctly because the derived is readable during component setup.
+The reference becomes reactive-correct: `const savePatch = $derived(storage.savePatch)`. Reading and calling `savePatch(...)` continues to work (a `$derived` holding a function value is callable). For aliases read only inside functions/event handlers (all five in `PatchControl`, and `saveWheelPhysics`/`resetWheelPhysics` in `WheelsPanel`), this fully resolves the warning.
+
+**One init-site exception:** `WheelsPanel` seeds component state from storage at setup time — `let physics = $state(loadWheelPhysics())`. Once `loadWheelPhysics` is a `$derived` (reactive), reading it to initialise a plain `$state` re-trips `state_referenced_locally` at the initialiser — the warning is relocated, not removed. The one-time load is genuinely a snapshot (`physics` is mutated locally thereafter and never re-reads storage), so we wrap the read in Svelte's `untrack`: `let physics = $state(untrack(() => loadWheelPhysics()))`. `untrack` is a real semantic — "read the current value without establishing a dependency" — not a suppression directive, so it is consistent with rejecting `// svelte-ignore` below: it makes the deliberate one-time read explicit rather than hiding the warning.
 
 **Alternatives considered:**
 
