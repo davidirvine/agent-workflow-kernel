@@ -10,10 +10,10 @@
 
 ## 3. Verify against the existing data-driven gates (no script edits)
 
-- [ ] 3.1 Run `scripts/check-manifest.sh` — confirm it asserts the new `appTemplates` source exists and the target does not collide with `paths`, and exits 0.
-- [ ] 3.2 Run `scripts/check-identity-leak.sh` — confirm the new template introduces no donor literal or sentinel; exits 0.
-- [ ] 3.3 Run `scripts/generate-assert.sh` — confirm the emitted app contains `.github/workflows/release-please.yml` with the template's content (the generic `appTemplates` assertion), the sync round-trip still passes, and the script exits 0 and tears down its tempdir.
-- [ ] 3.4 Run `scripts/smoke-app.sh` — confirm a freshly generated app still builds (the new workflow file does not affect the build) and the script exits 0.
+- [x] 3.1 Run `scripts/check-manifest.sh` — confirm it asserts the new `appTemplates` source exists and the target does not collide with `paths`, and exits 0.
+- [x] 3.2 Run `scripts/check-identity-leak.sh` — confirm the new template introduces no donor literal or sentinel; exits 0.
+- [x] 3.3 Run `scripts/generate-assert.sh` — confirm the emitted app contains `.github/workflows/release-please.yml` with the template's content (the generic `appTemplates` assertion), the sync round-trip still passes, and the script exits 0 and tears down its tempdir.
+- [x] 3.4 Run `scripts/smoke-app.sh` — confirm a freshly generated app still builds (the new workflow file does not affect the build) and the script exits 0.
 
 ## 4. Document the generated workflow
 
