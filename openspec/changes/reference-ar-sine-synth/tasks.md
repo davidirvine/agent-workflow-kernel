@@ -1,6 +1,6 @@
 ## 1. Schema: drop frequency, add attack/release
 
-- [ ] 1.1 In `presets/svelte-faust-synth/src/param-schema.js`, remove the `frequency` descriptor and add `attack` `{ min: 0.001, max: 1, default: 0.01, bipolar: false, kind: 'knob', ccScalable: true }` and `release` `{ min: 0.01, max: 2, default: 0.3, bipolar: false, kind: 'knob', ccScalable: true }`; keep the `waveform` switch (default `0`) and the `modWheel` controller. Update the module/JSDoc comments to describe the A/R sine voice instead of the drone. Confirm the derived collections (`PARAM_DEFAULTS`, `KNOB_PARAMS`, etc.) recompute correctly (no manual edits to them). Run prettier; commit `feat(preset): replace frequency knob with attack/release envelope params`.
+- [x] 1.1 In `presets/svelte-faust-synth/src/param-schema.js`, remove the `frequency` descriptor and add `attack` `{ min: 0.001, max: 1, default: 0.01, bipolar: false, kind: 'knob', ccScalable: true }` and `release` `{ min: 0.01, max: 2, default: 0.3, bipolar: false, kind: 'knob', ccScalable: true }`; keep the `waveform` switch (default `0`) and the `modWheel` controller. Update the module/JSDoc comments to describe the A/R sine voice instead of the drone. Confirm the derived collections (`PARAM_DEFAULTS`, `KNOB_PARAMS`, etc.) recompute correctly (no manual edits to them). Run prettier; commit `feat(preset): replace frequency knob with attack/release envelope params`.
 
 ## 2. DSP: gate-driven A/R envelope over a sine
 
