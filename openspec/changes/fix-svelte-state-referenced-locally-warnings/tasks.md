@@ -16,4 +16,4 @@
 
 ## 4. Verify against the artifacts
 
-- [ ] 4.1 Run `/opsx:verify fix-svelte-state-referenced-locally-warnings` to confirm the implementation matches the proposal, design, and the `preset-portability` spec delta (warning-free, gate-enforced bare build). If `verify` reports a mismatch, create follow-up tasks to resolve it before re-verifying — do not bundle corrective edits into this step. The `preset-portability` delta is applied to `openspec/specs/preset-portability/spec.md` at archive time (via the opsx archive/sync flow), not as a manual task here.
+- [x] 4.1 Run `/opsx:verify fix-svelte-state-referenced-locally-warnings` to confirm the implementation matches the proposal, design, and the `preset-portability` spec delta (warning-free, gate-enforced bare build). If `verify` reports a mismatch, create follow-up tasks to resolve it before re-verifying — do not bundle corrective edits into this step. The `preset-portability` delta is applied to `openspec/specs/preset-portability/spec.md` at archive time (via the opsx archive/sync flow), not as a manual task here.
