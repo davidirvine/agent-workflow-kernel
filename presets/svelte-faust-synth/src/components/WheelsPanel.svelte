@@ -33,9 +33,9 @@
     wheelStorage,
   } = $props()
 
-  const loadWheelPhysics = wheelStorage.loadWheelPhysics
-  const saveWheelPhysics = wheelStorage.saveWheelPhysics
-  const resetWheelPhysics = wheelStorage.resetWheelPhysics
+  const loadWheelPhysics = $derived(wheelStorage.loadWheelPhysics)
+  const saveWheelPhysics = $derived(wheelStorage.saveWheelPhysics)
+  const resetWheelPhysics = $derived(wheelStorage.resetWheelPhysics)
 
   let physics = $state(loadWheelPhysics())
 
