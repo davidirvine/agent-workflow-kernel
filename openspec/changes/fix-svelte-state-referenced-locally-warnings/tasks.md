@@ -1,6 +1,6 @@
 ## 1. Fix the alias bindings
 
-- [ ] 1.1 In `presets/svelte-faust-synth/src/components/WheelsPanel.svelte`, wrap the three `wheelStorage.*` method aliases (`loadWheelPhysics`, `saveWheelPhysics`, `resetWheelPhysics`) in `$derived`; leave every call site unchanged. Format with the preset's prettier and commit (`chore(preset)`).
+- [x] 1.1 In `presets/svelte-faust-synth/src/components/WheelsPanel.svelte`, wrap the three `wheelStorage.*` method aliases (`loadWheelPhysics`, `saveWheelPhysics`, `resetWheelPhysics`) in `$derived`; leave every call site unchanged. Format with the preset's prettier and commit (`chore(preset)`).
 - [ ] 1.2 In `presets/svelte-faust-synth/src/components/PatchControl.svelte`, wrap the five `storage.*` method aliases (`listPatches`, `savePatch`, `loadPatch`, `deletePatch`, `renamePatch`) in `$derived`; leave every call site unchanged. Format with the preset's prettier and commit (`chore(preset)`).
 
 ## 2. Enforce warning-free builds

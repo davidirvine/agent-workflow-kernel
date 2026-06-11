@@ -25,11 +25,11 @@
   let { powered = false, storage } = $props()
 
   // Local aliases keep the call sites unchanged from the pre-refactor shape.
-  const listPatches = storage.listPatches
-  const savePatch = storage.savePatch
-  const loadPatch = storage.loadPatch
-  const deletePatch = storage.deletePatch
-  const renamePatch = storage.renamePatch
+  const listPatches = $derived(storage.listPatches)
+  const savePatch = $derived(storage.savePatch)
+  const loadPatch = $derived(storage.loadPatch)
+  const deletePatch = $derived(storage.deletePatch)
+  const renamePatch = $derived(storage.renamePatch)
 
   let open = $state(false)
   let rootEl = $state(/** @type {HTMLElement | null} */ (null))
