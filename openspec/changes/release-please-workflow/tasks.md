@@ -5,8 +5,8 @@
 
 ## 2. Wire the template into the preset's appTemplates
 
-- [ ] 2.1 In `kernel-manifest.json`, add to `stack.presets["presets/svelte-faust-synth"].appTemplates` the entry `".github/workflows/release-please.yml": "templates/release-please.yml"` (alongside the existing `ci.yml` entry).
-- [ ] 2.2 Run `npx prettier --write kernel-manifest.json`.
+- [x] 2.1 In `kernel-manifest.json`, add to `stack.presets["presets/svelte-faust-synth"].appTemplates` the entry `".github/workflows/release-please.yml": "templates/release-please.yml"` (alongside the existing `ci.yml` entry).
+- [x] 2.2 Run `npx prettier --write kernel-manifest.json`.
 
 ## 3. Verify against the existing data-driven gates (no script edits)
 

@@ -98,7 +98,8 @@
         "faust/synth.dsp": "stubs/synth.dsp"
       },
       "appTemplates": {
-        ".github/workflows/ci.yml": "templates/app-ci.yml"
+        ".github/workflows/ci.yml": "templates/app-ci.yml",
+        ".github/workflows/release-please.yml": "templates/release-please.yml"
       },
       "specs": [
         "openspec/specs/chassis-architecture/spec.md",
