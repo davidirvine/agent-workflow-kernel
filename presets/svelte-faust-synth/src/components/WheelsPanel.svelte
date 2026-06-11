@@ -4,7 +4,7 @@
   // of per-wheel physics knobs, and localStorage persistence of those physics.
   // Each wheel stays param-agnostic; this panel adds the synth `param` (MOD →
   // `modWheel`) or forwards to the pitch handler before bubbling onchange up.
-  import { tick } from 'svelte'
+  import { tick, untrack } from 'svelte'
   import Wheel from './Wheel.svelte'
   import Knob from './Knob.svelte'
   import { PHYSICS_RANGES } from '../audio/wheelPhysics.js'
@@ -37,7 +37,11 @@
   const saveWheelPhysics = $derived(wheelStorage.saveWheelPhysics)
   const resetWheelPhysics = $derived(wheelStorage.resetWheelPhysics)
 
-  let physics = $state(loadWheelPhysics())
+  // `loadWheelPhysics` is now a `$derived` (reactive), so reading it to seed a
+  // plain `$state` would itself trip `state_referenced_locally`. The one-time
+  // load is deliberately a snapshot — `physics` is mutated locally thereafter —
+  // so `untrack` records that intent rather than suppressing the warning.
+  let physics = $state(untrack(() => loadWheelPhysics()))
 
   let open = $state(false)
   let rootEl = $state(/** @type {HTMLElement | null} */ (null))

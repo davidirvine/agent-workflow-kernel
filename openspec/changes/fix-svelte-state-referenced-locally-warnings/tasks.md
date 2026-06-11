@@ -1,11 +1,12 @@
 ## 1. Fix the alias bindings
 
 - [x] 1.1 In `presets/svelte-faust-synth/src/components/WheelsPanel.svelte`, wrap the three `wheelStorage.*` method aliases (`loadWheelPhysics`, `saveWheelPhysics`, `resetWheelPhysics`) in `$derived`; leave every call site unchanged. Format with the preset's prettier and commit (`chore(preset)`).
-- [ ] 1.2 In `presets/svelte-faust-synth/src/components/PatchControl.svelte`, wrap the five `storage.*` method aliases (`listPatches`, `savePatch`, `loadPatch`, `deletePatch`, `renamePatch`) in `$derived`; leave every call site unchanged. Format with the preset's prettier and commit (`chore(preset)`).
+- [x] 1.2 In `presets/svelte-faust-synth/src/components/PatchControl.svelte`, wrap the five `storage.*` method aliases (`listPatches`, `savePatch`, `loadPatch`, `deletePatch`, `renamePatch`) in `$derived`; leave every call site unchanged. Format with the preset's prettier and commit (`chore(preset)`).
+- [x] 1.3 In `presets/svelte-faust-synth/src/components/WheelsPanel.svelte`, wrap the one-time `$state` initialiser read of the now-reactive `loadWheelPhysics` alias in `untrack` (`let physics = $state(untrack(() => loadWheelPhysics()))`) and import `untrack` from `svelte`. This resolves the `state_referenced_locally` warning relocated to the initialiser by 1.1's `$derived` wrap (see design D1). Format with the preset's prettier and commit (`chore(preset)`).
 
 ## 2. Enforce warning-free builds
 
-- [ ] 2.1 In `presets/svelte-faust-synth/svelte.config.js`, add an `onwarn(warning, defaultHandler)` handler that throws on any Svelte compiler warning so a regressed warning fails `npm run build`. Format and commit (`chore(preset)`).
+- [x] 2.1 In `presets/svelte-faust-synth/svelte.config.js`, add an `onwarn(warning, defaultHandler)` handler that throws on any Svelte compiler warning so a regressed warning fails `npm run build`. Format and commit (`chore(preset)`).
 
 ## 3. Verify the build is clean and enforced
 
