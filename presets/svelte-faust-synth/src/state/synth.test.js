@@ -34,10 +34,11 @@ describe('synth store — schema', () => {
     }
   })
 
-  it('includes the reference instrument knob and switch', () => {
-    // The reference instrument's schema has one knob (frequency) and one
-    // switch (waveform). Both must be store-backed.
-    expect(PARAM_NAMES).toContain('frequency')
+  it('includes the reference instrument knobs and switch', () => {
+    // The reference instrument's schema has two knobs (attack, release) and one
+    // switch (waveform). All must be store-backed.
+    expect(PARAM_NAMES).toContain('attack')
+    expect(PARAM_NAMES).toContain('release')
     expect(PARAM_NAMES).toContain('waveform')
   })
 
@@ -47,23 +48,24 @@ describe('synth store — schema', () => {
   })
 
   it('factory defaults match the schema declaration', () => {
-    expect(PARAM_DEFAULTS.frequency).toBe(220)
+    expect(PARAM_DEFAULTS.attack).toBe(0.01)
+    expect(PARAM_DEFAULTS.release).toBe(0.3)
     expect(PARAM_DEFAULTS.waveform).toBe(0)
   })
 })
 
 describe('synth store — writeParam DSP forwarding', () => {
   it('forwards a finite audio-param change to setParam exactly once', () => {
-    writeParam('frequency', 1234)
-    expect(synthParams.frequency).toBe(1234)
+    writeParam('attack', 0.5)
+    expect(synthParams.attack).toBe(0.5)
     expect(setParamMock).toHaveBeenCalledTimes(1)
-    expect(setParamMock).toHaveBeenCalledWith('frequency', 1234)
+    expect(setParamMock).toHaveBeenCalledWith('attack', 0.5)
   })
 
   it('does not re-fire setParam on an equal-value write', () => {
-    writeParam('frequency', 1234)
+    writeParam('attack', 0.5)
     setParamMock.mockClear()
-    writeParam('frequency', 1234)
+    writeParam('attack', 0.5)
     expect(setParamMock).not.toHaveBeenCalled()
   })
 
@@ -74,17 +76,17 @@ describe('synth store — writeParam DSP forwarding', () => {
   })
 
   it('skips a non-finite value — no store change, no setParam', () => {
-    writeParam('frequency', NaN)
-    expect(synthParams.frequency).toBe(PARAM_DEFAULTS.frequency)
+    writeParam('attack', NaN)
+    expect(synthParams.attack).toBe(PARAM_DEFAULTS.attack)
     expect(setParamMock).not.toHaveBeenCalled()
 
-    writeParam('frequency', Infinity)
+    writeParam('attack', Infinity)
     expect(setParamMock).not.toHaveBeenCalled()
   })
 
   it('force re-fires setParam even when the value is unchanged', () => {
-    writeParam('frequency', PARAM_DEFAULTS.frequency, true)
-    expect(setParamMock).toHaveBeenCalledWith('frequency', PARAM_DEFAULTS.frequency)
+    writeParam('attack', PARAM_DEFAULTS.attack, true)
+    expect(setParamMock).toHaveBeenCalledWith('attack', PARAM_DEFAULTS.attack)
   })
 
   it('forwards discrete (switch) params too', () => {
@@ -96,22 +98,22 @@ describe('synth store — writeParam DSP forwarding', () => {
 
 describe('synth store — applyParams', () => {
   it('applies every provided param and forwards each to the DSP by default', () => {
-    applyParams({ frequency: 500, waveform: 2 })
-    expect(synthParams.frequency).toBe(500)
+    applyParams({ attack: 0.5, waveform: 2 })
+    expect(synthParams.attack).toBe(0.5)
     expect(synthParams.waveform).toBe(2)
-    expect(setParamMock).toHaveBeenCalledWith('frequency', 500)
+    expect(setParamMock).toHaveBeenCalledWith('attack', 0.5)
     expect(setParamMock).toHaveBeenCalledWith('waveform', 2)
   })
 
   it('forces setParam for unchanged values (power-on must (re)send everything)', () => {
-    // frequency already at its default; applyParams should still send it.
-    applyParams({ frequency: PARAM_DEFAULTS.frequency })
-    expect(setParamMock).toHaveBeenCalledWith('frequency', PARAM_DEFAULTS.frequency)
+    // attack already at its default; applyParams should still send it.
+    applyParams({ attack: PARAM_DEFAULTS.attack })
+    expect(setParamMock).toHaveBeenCalledWith('attack', PARAM_DEFAULTS.attack)
   })
 
   it('ignores keys that are not store params', () => {
-    applyParams({ modWheel: 0.1, notAParam: 5, frequency: 800 })
-    expect(synthParams.frequency).toBe(800)
+    applyParams({ modWheel: 0.1, notAParam: 5, attack: 0.8 })
+    expect(synthParams.attack).toBe(0.8)
     expect(synthParams.modWheel).toBeUndefined()
     const names = setParamMock.mock.calls.map((c) => c[0])
     expect(names).not.toContain('modWheel')
@@ -121,27 +123,27 @@ describe('synth store — applyParams', () => {
 
 describe('synth store — resetToDefaults / serializeParams', () => {
   it('resetToDefaults restores and re-sends every default', () => {
-    writeParam('frequency', 999)
+    writeParam('attack', 0.9)
     setParamMock.mockClear()
     resetToDefaults()
-    expect(synthParams.frequency).toBe(PARAM_DEFAULTS.frequency)
+    expect(synthParams.attack).toBe(PARAM_DEFAULTS.attack)
     // Every parameter is force-sent on reset.
     expect(setParamMock).toHaveBeenCalledTimes(PARAM_NAMES.length)
   })
 
   it('serializeParams snapshots exactly the in-scope params', () => {
-    writeParam('frequency', 321)
+    writeParam('attack', 0.42)
     const snap = serializeParams()
     expect(Object.keys(snap).sort()).toEqual([...PARAM_NAMES].sort())
-    expect(snap.frequency).toBe(321)
+    expect(snap.attack).toBe(0.42)
     expect(snap).not.toHaveProperty('modWheel')
   })
 
   it('resetParams restores synthParams to defaults without touching the DSP', () => {
-    synthParams.frequency = 12345
+    synthParams.attack = 0.77
     synthParams.waveform = 3
     resetParams()
-    expect(synthParams.frequency).toBe(PARAM_DEFAULTS.frequency)
+    expect(synthParams.attack).toBe(PARAM_DEFAULTS.attack)
     expect(synthParams.waveform).toBe(PARAM_DEFAULTS.waveform)
     expect(setParamMock).not.toHaveBeenCalled()
   })
@@ -151,19 +153,19 @@ describe('synth store — active patch', () => {
   it('defaults to factory params with a null name (before any load)', () => {
     // Placed before any setActivePatch call so it observes the initial state.
     expect(activePatch.name).toBeNull()
-    expect(activePatch.params.frequency).toBe(PARAM_DEFAULTS.frequency)
+    expect(activePatch.params.attack).toBe(PARAM_DEFAULTS.attack)
     expect(activePatch.params.waveform).toBe(PARAM_DEFAULTS.waveform)
   })
 
   it('setActivePatch records the name and a copy of the params', () => {
-    const params = { ...PARAM_DEFAULTS, frequency: 4321 }
+    const params = { ...PARAM_DEFAULTS, attack: 0.42 }
     setActivePatch('lead', params)
     expect(activePatch.name).toBe('lead')
-    expect(activePatch.params.frequency).toBe(4321)
+    expect(activePatch.params.attack).toBe(0.42)
 
     // The stored params are a copy: mutating the source must not change them.
-    params.frequency = 9999
-    expect(activePatch.params.frequency).toBe(4321)
+    params.attack = 0.99
+    expect(activePatch.params.attack).toBe(0.42)
   })
 
   it('setActivePatch can clear the name back to null', () => {

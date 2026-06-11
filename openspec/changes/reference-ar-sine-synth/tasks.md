@@ -12,7 +12,7 @@
 
 ## 4. Tests: re-point off frequency, cover the envelope
 
-- [ ] 4.1 Update the instrument-owned tests that name `frequency` to the new params: `src/state/synth.test.js` and `src/patches/storage.test.js` — assert defaults/persistence for `attack`/`release` (and `waveform`) instead of `frequency`. Run the affected vitest files green. Commit `test(preset): update synth/store tests for attack/release params`.
+- [x] 4.1 Update the instrument-owned tests that name `frequency` to the new params: `src/state/synth.test.js` and `src/patches/storage.test.js` — assert defaults/persistence for `attack`/`release` (and `waveform`) instead of `frequency`. Run the affected vitest files green. Commit `test(preset): update synth/store tests for attack/release params`.
 - [ ] 4.2 Update `src/power-off-silence.test.js` (the only instrument-tier power/silence test; confirm no other instrument-tier test asserts the old drone behavior) so it asserts power-on silence and that `gate` drives audible amplitude (silent at `gate` low, non-silent at `gate` high) rather than an audible-on-power-on drone. Run those vitest files green. Commit `test(preset): assert key-triggered envelope, silent until played`.
 - [ ] 4.3 Verify `src/chassis-purity.test.js`: confirm its `frequency` usage is an instrument-literal leak assertion (chassis names no instrument param), not a fixture asserting `frequency` exists; if it hard-codes `frequency` as the sample literal, swap it for a current param name without changing the test's intent. If no code change is needed, record that in the commit body. Commit `test(preset): keep chassis-purity literal current after param rename` (or `chore` if verify-only with no change).
 

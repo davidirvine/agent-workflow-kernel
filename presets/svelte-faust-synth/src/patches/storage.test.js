@@ -89,7 +89,7 @@ describe('storage — namespace is constructor-injected', () => {
 
 describe('storage — round-trip', () => {
   it('save → list → load → delete', () => {
-    const params = { ...PARAM_DEFAULTS, frequency: 1500, waveform: 2 }
+    const params = { ...PARAM_DEFAULTS, attack: 0.5, release: 1.2, waveform: 2 }
     const res = savePatch('LEAD', params)
     expect(res).toEqual({ ok: true, name: 'LEAD' })
 
@@ -98,7 +98,8 @@ describe('storage — round-trip', () => {
     const loaded = loadPatch('LEAD')
     expect(loaded?.name).toBe('LEAD')
     expect(loaded?.version).toBe(PATCH_VERSION)
-    expect(loaded?.params.frequency).toBe(1500)
+    expect(loaded?.params.attack).toBe(0.5)
+    expect(loaded?.params.release).toBe(1.2)
     expect(loaded?.params.waveform).toBe(2)
 
     expect(deletePatch('LEAD')).toBe(true)
@@ -128,10 +129,10 @@ describe('storage — round-trip', () => {
   })
 
   it('overwriting an existing name does not duplicate the index entry', () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 500 })
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 1000 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.2 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.4 })
     expect(listPatches()).toEqual(['LEAD'])
-    expect(loadPatch('LEAD')?.params.frequency).toBe(1000)
+    expect(loadPatch('LEAD')?.params.attack).toBe(0.4)
   })
 })
 
@@ -142,13 +143,13 @@ describe('storage — excluded params', () => {
     expect(loaded?.params).not.toHaveProperty('modWheel')
     expect(loaded?.params).not.toHaveProperty('register')
     expect(loaded?.params).not.toHaveProperty('notAParam')
-    expect(loaded?.params).toHaveProperty('frequency')
+    expect(loaded?.params).toHaveProperty('attack')
   })
 
   it('skips non-finite param values', () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: NaN })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: NaN })
     const loaded = loadPatch('LEAD')
-    expect(loaded?.params).not.toHaveProperty('frequency')
+    expect(loaded?.params).not.toHaveProperty('attack')
   })
 })
 
@@ -177,11 +178,11 @@ describe('storage — legacy name migration', () => {
   }
 
   it('listPatches migrates legacy lower-case names to upper-case', () => {
-    seedLegacy('my-sound', { frequency: 1234 })
+    seedLegacy('my-sound', { attack: 0.42 })
     expect(listPatches()).toEqual(['MY-SOUND'])
     // The slot moved to the upper-cased key with an updated envelope name.
     expect(localStorage.getItem(SLOT_PREFIX + 'my-sound')).toBeNull()
-    expect(loadPatch('MY-SOUND')?.params.frequency).toBe(1234)
+    expect(loadPatch('MY-SOUND')?.params.attack).toBe(0.42)
     const env = JSON.parse(/** @type {string} */ (localStorage.getItem(SLOT_PREFIX + 'MY-SOUND')))
     expect(env.name).toBe('MY-SOUND')
   })
@@ -201,25 +202,25 @@ describe('storage — legacy name migration', () => {
   })
 
   it('de-duplicates when a legacy name and its upper-case twin both exist', () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 1000 })
-    seedLegacy('lead', { frequency: 500 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.4 })
+    seedLegacy('lead', { attack: 0.2 })
     // Canonical 'LEAD' already claimed; the legacy 'lead' slot is dropped.
     expect(listPatches()).toEqual(['LEAD'])
-    expect(loadPatch('LEAD')?.params.frequency).toBe(1000)
+    expect(loadPatch('LEAD')?.params.attack).toBe(0.4)
     expect(localStorage.getItem(SLOT_PREFIX + 'lead')).toBeNull()
   })
 })
 
 describe('storage — renamePatch', () => {
   it('renames to a new name: listed and loadable under the new name only', () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 1500 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.5 })
     savePatch('PAD', PARAM_DEFAULTS)
     const res = renamePatch('LEAD', 'LEAD2')
     expect(res).toEqual({ ok: true, name: 'LEAD2' })
     // Order preserved: 'LEAD' position now holds 'LEAD2'.
     expect(listPatches()).toEqual(['LEAD2', 'PAD'])
     expect(loadPatch('LEAD')).toBeNull()
-    expect(loadPatch('LEAD2')?.params.frequency).toBe(1500)
+    expect(loadPatch('LEAD2')?.params.attack).toBe(0.5)
   })
 
   it('updates the stored envelope name', () => {
@@ -253,13 +254,13 @@ describe('storage — renamePatch', () => {
   })
 
   it('renaming onto a different existing name overwrites it (no duplicate index entry)', () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 1500 })
-    savePatch('PAD', { ...PARAM_DEFAULTS, frequency: 500 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.5 })
+    savePatch('PAD', { ...PARAM_DEFAULTS, attack: 0.2 })
     const res = renamePatch('LEAD', 'PAD')
     expect(res).toEqual({ ok: true, name: 'PAD' })
     expect(listPatches()).toEqual(['PAD'])
     // 'PAD' now holds LEAD's params.
-    expect(loadPatch('PAD')?.params.frequency).toBe(1500)
+    expect(loadPatch('PAD')?.params.attack).toBe(0.5)
     expect(loadPatch('LEAD')).toBeNull()
   })
 
@@ -278,8 +279,8 @@ describe('storage — renamePatch', () => {
   })
 
   it('does not destroy the overwritten target when the slot write fails', () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 1500 })
-    savePatch('PAD', { ...PARAM_DEFAULTS, frequency: 500 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.5 })
+    savePatch('PAD', { ...PARAM_DEFAULTS, attack: 0.2 })
     const realSet = Storage.prototype.setItem
     // Allow the index write but fail the destination slot write.
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (key, value) {
@@ -290,8 +291,8 @@ describe('storage — renamePatch', () => {
     vi.restoreAllMocks()
     // Index restored and both patches intact with their original data.
     expect(listPatches()).toEqual(['LEAD', 'PAD'])
-    expect(loadPatch('LEAD')?.params.frequency).toBe(1500)
-    expect(loadPatch('PAD')?.params.frequency).toBe(500)
+    expect(loadPatch('LEAD')?.params.attack).toBe(0.5)
+    expect(loadPatch('PAD')?.params.attack).toBe(0.2)
   })
 })
 
@@ -332,9 +333,9 @@ describe('storage — index integrity', () => {
 describe('storage — exact serialized slot contents', () => {
   it('the stored slot contains only the provided in-scope finite params', () => {
     // Pass a PARTIAL params object with one extra key and one non-finite value.
-    savePatch('LEAD', { frequency: 500, waveform: NaN, modWheel: 0.9 })
+    savePatch('LEAD', { attack: 0.5, waveform: NaN, modWheel: 0.9 })
     const env = JSON.parse(/** @type {string} */ (localStorage.getItem(SLOT_PREFIX + 'LEAD')))
-    expect(env.params).toEqual({ frequency: 500 })
+    expect(env.params).toEqual({ attack: 0.5 })
     expect(env.name).toBe('LEAD')
     expect(env.version).toBe(PATCH_VERSION)
   })
@@ -344,18 +345,18 @@ describe('storage — load returns exactly the stored in-scope params', () => {
   it('does not PAD the result with absent param names', () => {
     localStorage.setItem(
       SLOT_PREFIX + 'PARTIAL',
-      JSON.stringify({ name: 'PARTIAL', version: 1, params: { frequency: 100, waveform: 2 } })
+      JSON.stringify({ name: 'PARTIAL', version: 1, params: { attack: 0.3, waveform: 2 } })
     )
     const loaded = loadPatch('PARTIAL')
-    expect(loaded?.params).toEqual({ frequency: 100, waveform: 2 })
+    expect(loaded?.params).toEqual({ attack: 0.3, waveform: 2 })
   })
 
   it('drops non-finite values present in a stored slot', () => {
     localStorage.setItem(
       SLOT_PREFIX + 'WEIRD',
-      JSON.stringify({ name: 'WEIRD', version: 1, params: { frequency: 100, waveform: null } })
+      JSON.stringify({ name: 'WEIRD', version: 1, params: { attack: 0.3, waveform: null } })
     )
-    expect(loadPatch('WEIRD')?.params).toEqual({ frequency: 100 })
+    expect(loadPatch('WEIRD')?.params).toEqual({ attack: 0.3 })
   })
 })
 
@@ -363,13 +364,13 @@ describe('storage — envelope version', () => {
   it('preserves a numeric version and falls back to PATCH_VERSION otherwise', () => {
     localStorage.setItem(
       SLOT_PREFIX + 'NUMBERED',
-      JSON.stringify({ name: 'NUMBERED', version: 7, params: { frequency: 100 } })
+      JSON.stringify({ name: 'NUMBERED', version: 7, params: { attack: 0.3 } })
     )
     expect(loadPatch('NUMBERED')?.version).toBe(7)
 
     localStorage.setItem(
       SLOT_PREFIX + 'STRINGY',
-      JSON.stringify({ name: 'STRINGY', version: 'v2', params: { frequency: 100 } })
+      JSON.stringify({ name: 'STRINGY', version: 'v2', params: { attack: 0.3 } })
     )
     expect(loadPatch('STRINGY')?.version).toBe(PATCH_VERSION)
   })
