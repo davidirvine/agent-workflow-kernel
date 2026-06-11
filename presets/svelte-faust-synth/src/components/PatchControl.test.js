@@ -167,26 +167,26 @@ describe('PatchControl — save', () => {
   })
 
   it('canceling the overwrite confirm does not write', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 1111 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.11 })
     const { container, getByLabelText } = renderControl()
     // Change the live state so a save would differ from the stored slot.
-    writeParam('frequency', 9999)
+    writeParam('attack', 0.99)
     await openPopover(container)
     await typeName(container, 'LEAD')
     await fireEvent.click(/** @type {Element} */ (container.querySelector('.save-btn')))
     await fireEvent.click(getByLabelText('cancel overwrite'))
-    expect(loadPatch('LEAD')?.params.frequency).toBe(1111)
+    expect(loadPatch('LEAD')?.params.attack).toBe(0.11)
   })
 })
 
 describe('PatchControl — update in place', () => {
   it('saving the active patch by its own name updates it with no overwrite confirm', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 1000 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.1 })
     const { container, getByText } = renderControl()
     // Load it so it becomes the active patch (popover stays open), then tweak.
     await openPopover(container)
     await fireEvent.click(getByText('LEAD'))
-    writeParam('frequency', 5000)
+    writeParam('attack', 0.5)
     await Promise.resolve()
     expect(container.querySelector('.dirty')).not.toBeNull()
 
@@ -194,7 +194,7 @@ describe('PatchControl — update in place', () => {
     await fireEvent.click(/** @type {Element} */ (container.querySelector('.save-btn')))
     // No overwrite confirmation was shown.
     expect(container.querySelector('.confirm')).toBeNull()
-    expect(loadPatch('LEAD')?.params.frequency).toBe(5000)
+    expect(loadPatch('LEAD')?.params.attack).toBe(0.5)
     expect(listPatches()).toEqual(['LEAD'])
     await Promise.resolve()
     expect(container.querySelector('.dirty')).toBeNull()
@@ -203,7 +203,7 @@ describe('PatchControl — update in place', () => {
 
 describe('PatchControl — rename', () => {
   it('renames a patch to a new name', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 8000 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.8 })
     const { container } = renderControl()
     await openPopover(container)
     await fireEvent.click(
@@ -232,8 +232,8 @@ describe('PatchControl — rename', () => {
   })
 
   it('renaming onto a different existing name requires an inline confirm', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 8000 })
-    savePatch('PAD', { ...PARAM_DEFAULTS, frequency: 1000 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.8 })
+    savePatch('PAD', { ...PARAM_DEFAULTS, attack: 0.1 })
     const { container, getByText } = renderControl()
     await openPopover(container)
     await fireEvent.click(
@@ -324,11 +324,11 @@ describe('PatchControl — rename', () => {
 
 describe('PatchControl — load', () => {
   it('loading a patch applies its params to the store and marks it active', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 8000, waveform: 3 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.8, waveform: 3 })
     const { container, getByText } = renderControl()
     await openPopover(container)
     await fireEvent.click(getByText('LEAD'))
-    expect(synthParams.frequency).toBe(8000)
+    expect(synthParams.attack).toBe(0.8)
     expect(synthParams.waveform).toBe(3)
     expect(/** @type {Element} */ (container.querySelector('.patch-name')).textContent).toBe('LEAD')
   })
@@ -406,14 +406,14 @@ describe('PatchControl — dirty marker', () => {
 
   it('shows the dirty marker after an in-scope param changes', async () => {
     const { container } = renderControl()
-    writeParam('frequency', 5000)
+    writeParam('attack', 0.5)
     await Promise.resolve()
     expect(container.querySelector('.dirty')).not.toBeNull()
   })
 
   it('saving clears the dirty marker', async () => {
     const { container } = renderControl()
-    writeParam('frequency', 5000)
+    writeParam('attack', 0.5)
     await openPopover(container)
     await typeName(container, 'LEAD')
     await fireEvent.click(/** @type {Element} */ (container.querySelector('.save-btn')))
@@ -422,9 +422,9 @@ describe('PatchControl — dirty marker', () => {
   })
 
   it('loading clears the dirty marker', async () => {
-    savePatch('LEAD', { ...PARAM_DEFAULTS, frequency: 8000 })
+    savePatch('LEAD', { ...PARAM_DEFAULTS, attack: 0.8 })
     const { container, getByText } = renderControl()
-    writeParam('frequency', 5000)
+    writeParam('attack', 0.5)
     await openPopover(container)
     await fireEvent.click(getByText('LEAD'))
     await Promise.resolve()
@@ -434,12 +434,12 @@ describe('PatchControl — dirty marker', () => {
   it('loading a PARTIAL patch (missing keys) is not falsely dirty', async () => {
     // A patch from before a param existed (or with non-finite values dropped):
     // savePatch stores only the provided in-scope keys, so the slot is PARTIAL.
-    savePatch('OLD', { frequency: 8000 })
+    savePatch('OLD', { attack: 0.8 })
     const { container, getByText } = renderControl()
     await openPopover(container)
     await fireEvent.click(getByText('OLD'))
     await Promise.resolve()
-    expect(synthParams.frequency).toBe(8000)
+    expect(synthParams.attack).toBe(0.8)
     // Missing params fell back to defaults, and the baseline has every key, so
     // there are no spurious unsaved-change markers.
     expect(container.querySelector('.dirty')).toBeNull()

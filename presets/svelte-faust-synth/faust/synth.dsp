@@ -1,8 +1,8 @@
-// The reference instrument's FAUST DSP — a minimal droning oscillator with a
-// waveform selector and a frequency knob. Kept deliberately tiny so the chassis
-// seam is visible without being drowned in instrument detail. new-app.sh
-// (slice 3) blanks this when emitting a fresh app; the preset keeps it as a
-// worked example.
+// The reference instrument's FAUST DSP — a minimal key-triggered A/R sine synth
+// with a waveform selector and attack/release envelope knobs. Kept deliberately
+// tiny so the chassis seam is visible without being drowned in instrument
+// detail. new-app.sh (slice 3) blanks this when emitting a fresh app; the preset
+// keeps it as a worked example.
 //
 // Param naming MUST match src/param-schema.js — the chassis routes setParam
 // calls by the schema's keys. WAVEFORMS order is also load-bearing: the
@@ -24,9 +24,11 @@ modWheel = hslider("modWheel", 0, 0, 1, 0.001);
 
 // ─── Instrument schema params (the schema/store writes these) ───────────────
 
-// Matches the `frequency` knob descriptor in src/param-schema.js (bounds and
-// default identical — the schema is the source of truth).
-frequency = hslider("frequency [unit:Hz]", 220, 20, 2000, 0.01);
+// Match the `attack`/`release` knob descriptors in src/param-schema.js (bounds
+// and defaults identical — the schema is the source of truth). These drive the
+// gated A/R amplitude envelope below.
+attack = hslider("attack [unit:s]", 0.01, 0.001, 1, 0.001);
+release = hslider("release [unit:s]", 0.3, 0.01, 2, 0.001);
 // Index into the WAVEFORMS list in src/param-schema.js: 0=sine, 1=triangle,
 // 2=square, 3=saw. Range [0,3] integer; the schema's default is 0.
 // NOTE: `waveform` is a FAUST primitive (constant-table generator) — using it
@@ -35,23 +37,28 @@ frequency = hslider("frequency [unit:Hz]", 220, 20, 2000, 0.01);
 // setParam by the label string, so the schema key stays `waveform`.
 wfShape = nentry("waveform", 0, 0, 3, 1);
 
-// ─── Pitch: held keys override; otherwise the knob's resting pitch ─────────
+// ─── Pitch: driven entirely by the keyboard ────────────────────────────────
 
-// select2(c, s1, s2): c=0 → s1, c=1 → s2. gate=0 (no key held) → knob;
-// gate=1 (key held) → keyboard's freq.
-pitch = select2(int(gate), frequency, freq);
+// Pitch is just `freq` — the keyboard sets it on key-down and the pitch wheel /
+// MIDI bend already offset it in JS. With amplitude gated by the envelope below
+// there is no audible gate-low tail, so there is no resting-pitch knob.
+pitch = freq;
 
 // ─── Oscillator: pick by waveform index ─────────────────────────────────────
 // Order MUST match src/param-schema.js WAVEFORMS.
 
 waveOut = ba.selectn(4, int(wfShape), os.osc(pitch), os.triangle(pitch), os.square(pitch), os.sawtooth(pitch));
 
-// ─── Drone: continuous amplitude, no envelope ───────────────────────────────
-// 0.25 gain so a sine peak hits roughly -12 dBFS — audible but not painful
-// for the "hello world" power-on tone. The chassis power button is what
-// silences the instrument (chassis-architecture power-lifecycle).
+// ─── Envelope: gate-driven attack/release ───────────────────────────────────
+// en.ar(attack, release, gate): amplitude rises to peak over `attack` while the
+// key is held (gate=1), holds at peak, then falls over `release` on key-up
+// (gate=0) — an A/R envelope, not a decay-to-zero pluck (design D1). The
+// instrument is silent until a key is played; the chassis power button also
+// silences it (chassis-architecture power-lifecycle). The 0.5 gain keeps a sine
+// peak (envelope peak 1.0 × 0.5) well under clipping.
 
-vcaOut = waveOut * 0.25;
+env = en.ar(attack, release, gate);
+vcaOut = waveOut * env * 0.5;
 
 // ─── Meters ────────────────────────────────────────────────────────────────
 // outputPeak is a real readback so the chassis scope / level-LED light up.

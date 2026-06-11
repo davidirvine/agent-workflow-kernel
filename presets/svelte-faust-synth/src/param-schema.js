@@ -1,15 +1,15 @@
-// The parameter schema for the reference instrument: a minimal droning
-// oscillator with a waveform selector and a frequency knob. This module is the
-// single source of truth for what the instrument exposes and the explicit seam
-// between the generic chassis and this specific instrument
+// The parameter schema for the reference instrument: a minimal key-triggered
+// A/R sine synth with a waveform selector and attack/release envelope knobs.
+// This module is the single source of truth for what the instrument exposes and
+// the explicit seam between the generic chassis and this specific instrument
 // (chassis-architecture spec). It is instrument-owned (Tier 3) but the ONE
 // sanctioned cross-tier import: the chassis reads its schema-derived
 // collections from here.
 //
-// The schema is deliberately tiny — two store-backed params (frequency, waveform)
-// plus the modWheel controller — so the chassis seam is visible without being
-// drowned in instrument detail. new-app.sh (slice 3) blanks this when emitting a
-// fresh app; the preset keeps it as a worked example.
+// The schema is deliberately tiny — three store-backed params (attack, release,
+// waveform) plus the modWheel controller — so the chassis seam is visible
+// without being drowned in instrument detail. new-app.sh (slice 3) blanks this
+// when emitting a fresh app; the preset keeps it as a worked example.
 
 /**
  * A single parameter descriptor — see the chassis-architecture spec for the
@@ -35,10 +35,12 @@ export const WAVEFORMS = Object.freeze(['sine', 'triangle', 'square', 'saw'])
 /**
  * The parameter schema for the reference instrument.
  *
- * - `frequency`: continuous-tone pitch knob owning the instrument's resting
- *   pitch. Bounds 20–2000 Hz (audible range, well below Nyquist at any sane
- *   sample rate). Held keys override via `pitch = gate ? freq : knobFreq` —
- *   the chassis sends `freq`/`gate` as the universal note contract.
+ * - `attack`: amplitude-envelope attack time in seconds (0.001–1 s, default
+ *   0.01). The held key (`gate`) drives `en.ar(attack, release, gate)`, so a
+ *   note rises to peak over `attack` while held — the chassis sends `freq`/
+ *   `gate` as the universal note contract.
+ * - `release`: amplitude-envelope release time in seconds (0.01–2 s, default
+ *   0.3). The note fades over `release` on key-up.
  * - `waveform`: discrete oscillator-shape selector, four entries above.
  * - `modWheel`: the controller seam — CC-scalable but not store-backed.
  *
@@ -46,7 +48,10 @@ export const WAVEFORMS = Object.freeze(['sine', 'triangle', 'square', 'saw'])
  */
 export const PARAM_SCHEMA = Object.freeze({
   // --- Continuous (knob) parameters --------------------------------------
-  frequency: { min: 20, max: 2000, default: 220, bipolar: false, kind: 'knob', ccScalable: true },
+  // A/R amplitude envelope gated by the universal `gate`: silent until a key
+  // is held, rises over `attack`, falls over `release` on key-up.
+  attack: { min: 0.001, max: 1, default: 0.01, bipolar: false, kind: 'knob', ccScalable: true },
+  release: { min: 0.01, max: 2, default: 0.3, bipolar: false, kind: 'knob', ccScalable: true },
 
   // --- Discrete (switch) parameters --------------------------------------
   // Index into WAVEFORMS above. Default 0 = 'sine' (gentle "hello world" tone).
