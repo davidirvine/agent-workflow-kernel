@@ -12,8 +12,8 @@ import { PARAM_SCHEMA } from './param-schema.js'
 //
 // The blocklist is DERIVED from the CURRENT schema (not the donor's), so it
 // stays self-updating as a downstream app adds params. On this preset's
-// minimal reference schema (frequency, waveform) the test is "vacuous-but-
-// correct": it forbids those names from chassis files, which IS the right
+// minimal reference schema (attack, release, waveform) the test is "vacuous-
+// but-correct": it forbids those names from chassis files, which IS the right
 // invariant. The synth-d full-vocabulary extraction audit
 // (scripts/run-extraction-audit.sh) covered the one-time donor leak detection;
 // this test takes over for ongoing chassis-purity verification.
@@ -68,7 +68,8 @@ describe('chassis purity: no instrument param-name literals in chassis code', ()
   })
 
   it('derives the blocklist from the schema and excludes the universal engine params', () => {
-    expect(INSTRUMENT_PARAM_NAMES).toContain('frequency')
+    expect(INSTRUMENT_PARAM_NAMES).toContain('attack')
+    expect(INSTRUMENT_PARAM_NAMES).toContain('release')
     expect(INSTRUMENT_PARAM_NAMES).toContain('waveform')
     expect(INSTRUMENT_PARAM_NAMES).not.toContain('modWheel')
     expect(INSTRUMENT_PARAM_NAMES).not.toContain('freq')
