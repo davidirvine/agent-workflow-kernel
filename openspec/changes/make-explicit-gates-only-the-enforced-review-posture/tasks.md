@@ -13,7 +13,7 @@
 ## 3. Resolve the hook collision so pushes stop failing (D3)
 
 - [x] 3.1 Implement the chosen fix (recommended Option B): replace `checks.sh`'s `.githooks/*` glob with an **explicit allowlist of kernel-authored hooks** (currently `.githooks/pre-commit` and `.githooks/pre-push`) — POSIX has no glob negation — with an inline comment naming the excluded roborev-managed paths (`post-commit`, `post-rewrite`) and warning that a future kernel-authored hook must be added to the allowlist. Or, if §1 forces it, the Option A symlink-safe relocation. Run `shfmt -w` + `shellcheck` on `checks.sh`.
-- [ ] 3.2 Add the durable neutralization step identified in §1 (e.g. `uninstall-hook` invoked from `setup.sh`/`install-hooks.sh`, guarded to no-op when roborev/daemon is absent). **Neutralize `post-commit`'s auto-enqueue only — do NOT alter `post-rewrite`'s `remap`, which is wanted at the explicit gates.** Run `shfmt -w` + `shellcheck` on any changed script.
+- [x] 3.2 Add the durable neutralization step identified in §1 (e.g. `uninstall-hook` invoked from `setup.sh`/`install-hooks.sh`, guarded to no-op when roborev/daemon is absent). **Neutralize `post-commit`'s auto-enqueue only — do NOT alter `post-rewrite`'s `remap`, which is wanted at the explicit gates.** Run `shfmt -w` + `shellcheck` on any changed script.
 - [ ] 3.3 Verify `git push` is not blocked after roborev re-arms its hook: arm the hook, run `git status`, confirm the tracked-hook modification no longer fails the push gate, and `scripts/checks.sh` passes.
 - [ ] 3.4 Verify `roborev remap` still functions after the changes: create a review, amend/rebase the commit, and confirm the review still tracks the new commit (guards against accidentally breaking `post-rewrite`).
 
