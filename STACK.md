@@ -112,8 +112,9 @@ section:
 ## Using new-app.sh
 
 `scripts/new-app.sh` emits a fresh app from the kernel + a preset. It reads
-`kernel-manifest.json` for what travels, writes the preset's instrument stubs,
-substitutes donor identity, resets the version to `0.1.0`, empties
+`kernel-manifest.json` for what travels, seeds the preset's reference
+instrument (via the `instrumentStubs` mapping), substitutes donor identity,
+resets the version to `0.1.0`, empties
 `openspec/changes/` to a `.gitkeep`, and runs `git init` + one chore commit.
 
 ```
@@ -130,8 +131,10 @@ After generation, run `npm install` in the new app once to regenerate
 activate the git hooks via `postinstall`. `npm run build` then works without a
 separate FAUST install — the `prebuild` step compiles the DSP via the
 `@grame/faustwasm` npm dependency (design D10), not a system FAUST compiler.
-The instrument starts as a silent stub DSP until you fill in
-`faust/synth.dsp` and `src/param-schema.js`.
+The instrument starts seeded with the preset's reference A/R sine synth — a
+small, playable, key-triggered instrument — so a fresh app is audible on its
+first build. You then edit `faust/synth.dsp` and `src/param-schema.js` to make
+it your own; the seeded instrument is app-owned content and is never re-synced.
 
 The generated app also receives `.github/workflows/release-please.yml`, sourced
 from the preset's `appTemplates` (alongside `.github/workflows/ci.yml`). It is the
