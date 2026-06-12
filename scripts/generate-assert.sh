@@ -320,6 +320,67 @@ else
   fi
 fi
 
+# ─── (5.12 / task 5.2) roborev explicit-gates posture travels intact ────────
+# A freshly generated app must inherit the enforced posture (change:
+# make-explicit-gates-only-the-enforced-review-posture):
+#   1. NOT auto-registered — its .githooks/post-commit is the no-op stub, not a
+#      roborev auto-review hook. Registration is a lazy side effect of the hook
+#      enqueuing a review (D1 audit); a no-op stub enqueues nothing, so it never
+#      registers. (The daemon-level non-registration is hook-driven, proven at the
+#      kernel level in the change's D1 audit; asserting the stub content here is
+#      the hermetic, daemon-free proxy.)
+#   2. Push gate cannot be broken by a roborev hook re-arm — the emitted checks.sh
+#      lints .githooks by a kernel-authored ALLOWLIST (pre-commit, pre-push) that
+#      excludes the roborev-managed post-commit/post-rewrite, and install-hooks.sh
+#      restores the stub. Verified functionally below with git only (no shfmt run,
+#      so this holds in a Node-only runner too).
+HOOK="$APP/.githooks/post-commit"
+if [ ! -f "$HOOK" ]; then
+  note "emitted .githooks/post-commit missing (cannot assert posture)"
+else
+  grep -q '^exit 0$' "$HOOK" || note "emitted .githooks/post-commit is not the no-op stub (no 'exit 0')"
+  # An armed roborev hook carries one of these markers; the stub carries neither.
+  if grep -Eq 'ROBOREV=|roborev post-commit hook' "$HOOK"; then
+    note "emitted .githooks/post-commit looks armed for roborev auto-review (a fresh app would auto-register)"
+  fi
+fi
+
+APP_CHECKS="$APP/scripts/checks.sh"
+if [ ! -f "$APP_CHECKS" ]; then
+  note "emitted scripts/checks.sh missing (cannot assert push-gate allowlist)"
+else
+  grep -Fq ".githooks/pre-commit" "$APP_CHECKS" || note "emitted checks.sh shell-lint list omits .githooks/pre-commit (allowlist not propagated)"
+  grep -Fq ".githooks/pre-push" "$APP_CHECKS" || note "emitted checks.sh shell-lint list omits .githooks/pre-push (allowlist not propagated)"
+  # The old '.githooks/*' glob would feed roborev-managed hooks to shfmt. Scope
+  # the check to the `git ls-files` discovery line so the explanatory comment in
+  # checks.sh (which names the glob to warn against it) is not a false positive.
+  if grep -E "git ls-files.*'\.githooks/\*'" "$APP_CHECKS" >/dev/null; then
+    note "emitted checks.sh still globs '.githooks/*' in its discovery (a roborev re-arm would break its push gate)"
+  fi
+fi
+
+APP_INSTALL="$APP/scripts/install-hooks.sh"
+if [ ! -f "$APP_INSTALL" ]; then
+  note "emitted scripts/install-hooks.sh missing (cannot assert neutralization)"
+elif ! grep -Fq "roborev post-commit hook" "$APP_INSTALL"; then
+  note "emitted install-hooks.sh lacks the roborev post-commit neutralization guard"
+fi
+
+# Functional re-arm proof (git only): arm the emitted app's hooks the way roborev
+# would, then run the SAME shell-file discovery the emitted checks.sh uses and
+# assert the roborev-managed hooks are absent from the lint input — so shfmt can
+# never see them and a re-arm cannot fail the push gate. Operate on the emitted
+# tree's own git index; restore the stub afterward.
+# shellcheck disable=SC2016 # the $ROBOREV literal is written verbatim into the simulated hook, not expanded here
+printf '#!/bin/sh\n# roborev post-commit hook v4 - auto-reviews every commit\nROBOREV=roborev\n"$ROBOREV" post-commit\n' >"$HOOK"
+cp "$HOOK" "$APP/.githooks/post-rewrite"
+rearm_lint_list="$(git -C "$APP" ls-files '*.sh' '.githooks/pre-commit' '.githooks/pre-push')"
+if printf '%s\n' "$rearm_lint_list" | grep -Eq '\.githooks/post-(commit|rewrite)$'; then
+  note "emitted checks.sh lint list includes a roborev-managed hook after re-arm (push gate would break)"
+fi
+git -C "$APP" checkout -- .githooks/post-commit >/dev/null 2>&1 || true
+rm -f "$APP/.githooks/post-rewrite"
+
 # ─── (5.6) Report ───────────────────────────────────────────────────────────
 if [ "$problems" -ne 0 ]; then
   KEEP=1
