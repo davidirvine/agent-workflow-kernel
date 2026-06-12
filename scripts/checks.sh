@@ -27,8 +27,19 @@ require() {
   fi
 }
 
-# Shell scripts: every tracked *.sh plus the extensionless .githooks/* scripts.
-sh_files=$(git ls-files '*.sh' '.githooks/*')
+# Shell scripts: every tracked *.sh plus the kernel-authored extensionless git
+# hooks, listed by name as an EXPLICIT ALLOWLIST rather than a '.githooks/*' glob.
+# Why an allowlist: roborev's `install-hook`/`init` rewrites .githooks/post-commit
+# into an auto-review hook and creates .githooks/post-rewrite (its `remap`), both
+# carrying roborev's own formatting (#!/bin/sh, 4-space indent). A '.githooks/*'
+# glob would feed those roborev-managed files to `shfmt -i 2`, which reflows them
+# into a diff and fails this gate — blocking every push (the bug this guards
+# against). Those two paths are roborev-managed, not kernel source, so they are
+# deliberately excluded. POSIX shell has no glob negation, so the kernel-authored
+# hooks are named individually.
+# NOTE: a future kernel-authored .githooks/ script MUST be added to this list or
+# it goes unlinted — there is no wildcard catching it.
+sh_files=$(git ls-files '*.sh' '.githooks/pre-commit' '.githooks/pre-push')
 if [ -n "$sh_files" ]; then
   if require shellcheck "install ShellCheck (brew install shellcheck / apt-get install shellcheck)"; then
     # -x: follow `source`d files (e.g. scripts/lib/manifest.sh) so a script that

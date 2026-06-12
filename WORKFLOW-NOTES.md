@@ -7,19 +7,52 @@
 > roborev / worktree tooling itself (not stack-specific build facts — those go
 > in `STACK.md`). Imported by `CLAUDE.md` via `@./WORKFLOW-NOTES.md`.
 
-## roborev queueing is daemon-based, not git-hook driven
+## roborev queueing is hook-driven, and roborev re-arms the tracked hook
 
-The committed `post-commit` / `post-rewrite` hooks are empty stubs (shebang only) —
-zero roborev logic. roborev queues reviews via its **daemon watching the main
-working dir's HEAD**, not via a hook. Consequence: **commits made on a branch
-inside a worktree are NOT auto-queued for review.** The gates work because
-`roborev review --branch` / `roborev refine` query the daemon explicitly.
+roborev enqueues a review **only** when an armed `post-commit` hook runs
+`roborev` `post-commit`. The daemon does **not** poll repos' HEADs — empirically
+verified: with the committed no-op stub active, a commit enqueues nothing (no
+`~/.roborev/post-commit.log` entry, no job); with the hook armed, the same commit
+enqueues. (Full evidence: the change `make-explicit-gates-only-the-enforced-review-posture`
+audit.) Repo "registration" in `roborev repo list` is a lazy side effect of that
+first enqueue, so `roborev repo delete` is one-time history cleanup only — it does
+not keep a repo unwatched, because there is nothing watching.
+
+The catch: roborev **follows `core.hooksPath`**, so `roborev install-hook`/`init`
+— **and `roborev review`/`refine`, which re-install the hooks as a side effect** —
+rewrite the **tracked** `.githooks/post-commit` (prepending or `--force`-replacing
+the no-op stub with an auto-review hook) and create `.githooks/post-rewrite`. That
+both re-introduces per-commit auto-review **and** lands roborev's own formatting in
+the tracked tree, which `shfmt -i 2` reflows into a diff that fails `scripts/checks.sh`
+— blocking every `git push`. (The earlier belief that the stub redirected roborev to
+an inert `.git/hooks/` was false.) So running a review gate itself arms the hook;
+the kernel does not prevent this, it **tolerates and heals** it (below).
+
+The kernel keeps the explicit-gates-only posture enforced against this:
+
+- `scripts/checks.sh` lints `.githooks` by an **explicit allowlist** of
+  kernel-authored hooks (`pre-commit`, `pre-push`), excluding the roborev-managed
+  `post-commit`/`post-rewrite`, so a re-arm can never break the push gate.
+- `scripts/install-hooks.sh` restores the no-op `post-commit` stub on every
+  setup/`npm install` if roborev armed it — **post-commit only**; `post-rewrite`'s
+  `remap` is left intact, since it is wanted at the explicit gates and never
+  auto-reviews.
+- There is **no roborev config off-switch** for the hook's enqueue (`post_commit_review`
+  is a review-type string with no disabling value; `auto_filter_*` are TUI display
+  filters). The residual window: after roborev arms the hook (a `roborev review`/`refine`
+  gate, or an out-of-band `roborev init`), a commit made before the next setup
+  re-neutralizes can enqueue once. The push gate stays safe regardless.
 
 Also: `core.hooksPath` lives in shared git config, so setting it applies to the
-main repo and all worktrees at once.
+main repo and all worktrees at once — a worktree commit fires the same active hook
+as main.
 
-**How to apply:** never put roborev wiring in hook files; rely on the daemon +
-explicit `roborev review`. Don't assume a post-commit fires a review — it doesn't.
+**How to apply:** run the review gates freely (`roborev review`/`refine`/`tui`/
+`/roborev-design-review-branch`) — but know they arm the hook as a side effect, so
+after a gate (or roborev's "hook is outdated, run roborev init" nudge), re-run
+`setup.sh`/`npm install` to re-neutralize the stub before relying on the no-auto-review
+posture. The push gate is safe regardless. Never hand-add roborev wiring to the
+committed hook files.
 
 ## `opsx-archive-worktree.sh` teardown almost always needs `FORCE=1`
 

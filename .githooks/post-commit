@@ -1,12 +1,23 @@
 #!/usr/bin/env sh
-# post-commit: deliberate no-op (D2).
+# post-commit: deliberate no-op — the version-controlled marker of the
+# explicit-gates-only review posture (D2/D4).
 #
 # Commits in this repo are NOT auto-reviewed. roborev runs only at the explicit
 # gates (proposal design review, end-of-implementation `roborev refine`, ad-hoc
-# `roborev review`) — never automatically per commit. This stub is the
-# version-controlled statement of that explicit-gate posture: while
-# core.hooksPath points at .githooks, git resolves all hooks from here and
-# ignores .git/hooks/, so a future `roborev init` that writes a per-commit
-# review hook into .git/hooks/ is inert, and any change to this stub shows up
-# as a reviewable diff rather than silently re-arming auto-review.
+# `roborev review`) — never automatically per commit.
+#
+# How the posture is actually enforced (the earlier "core.hooksPath redirects
+# roborev's writes to an inert .git/hooks/" claim was false — roborev FOLLOWS
+# core.hooksPath, so its `install-hook`/`init` rewrites THIS file and creates
+# .githooks/post-rewrite):
+#   1. Auto-review is hook-driven, not daemon-poll: a review is enqueued only
+#      when an armed post-commit runs `roborev` post-commit. This no-op stub
+#      enqueues nothing, so keeping it the active hook IS the posture.
+#   2. scripts/install-hooks.sh restores this stub on every setup/npm install if
+#      roborev has armed it (post-commit only — .githooks/post-rewrite's `remap`
+#      is left intact for the gates).
+#   3. scripts/checks.sh lints .githooks by an explicit kernel-authored allowlist
+#      that excludes this file, so a roborev re-arm cannot break the push gate.
+# Any change to this stub shows up as a reviewable diff rather than silently
+# re-arming auto-review. See WORKFLOW-NOTES.md for the residual re-arm window.
 exit 0
