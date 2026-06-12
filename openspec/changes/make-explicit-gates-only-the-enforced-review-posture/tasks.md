@@ -1,9 +1,9 @@
 ## 1. Investigation (gates all later groups — D1)
 
-- [ ] 1.1 On a scratch branch, run `roborev uninstall-hook` and `roborev repo delete` for this repo; confirm `.githooks/post-commit` returns to the committed stub and `.githooks/post-rewrite` is gone. Record the before/after state.
-- [ ] 1.2 Make a throwaway scratch commit and observe (`roborev status`/`roborev list`) whether a review enqueues; record the result.
-- [ ] 1.3 Determine whether the repo re-registers (`roborev repo list`) and whether the hook re-arms, and after which action (plain commit vs. a `roborev review`/`tui`/`status` invocation vs. a daemon event). Classify as **(a) hook-driven** or **(b) daemon-poll**.
-- [ ] 1.4 Enumerate whether roborev offers a supported "do not watch this repo" lever (`.roborev.toml` key, `auto_filter_repo`/`auto_filter_branch`, daemon config). Record findings as the change's audit evidence and restore repo/hook state.
+- [x] 1.1 On a scratch branch, run `roborev uninstall-hook` and `roborev repo delete` for this repo; confirm `.githooks/post-commit` returns to the committed stub and `.githooks/post-rewrite` is gone. Record the before/after state.
+- [x] 1.2 Make a throwaway scratch commit and observe (`roborev status`/`roborev list`) whether a review enqueues; record the result.
+- [x] 1.3 Determine whether the repo re-registers (`roborev repo list`) and whether the hook re-arms, and after which action (plain commit vs. a `roborev review`/`tui`/`status` invocation vs. a daemon event). Classify as **(a) hook-driven** or **(b) daemon-poll**.
+- [x] 1.4 Enumerate whether roborev offers a supported "do not watch this repo" lever (`.roborev.toml` key, `auto_filter_repo`/`auto_filter_branch`, daemon config). Record findings as the change's audit evidence and restore repo/hook state.
 
 ## 2. Enforce the explicit-gates posture (D2)
 
