@@ -2,17 +2,17 @@
 
 ### Requirement: Commits are not auto-reviewed
 
-The repository SHALL enforce the explicit-gate review posture such that no automatic code review is enqueued by a commit on any branch, through **any** roborev mechanism — the committed `.githooks/post-commit` hook **and** the roborev daemon's repository registration/watch. The enforcement SHALL be durable: it MUST continue to hold after roborev re-arms its hooks (`roborev install-hook`/`roborev init`) or would otherwise observe the repository's commits. The committed `.githooks/post-commit` no-op stub SHALL remain the version-controlled statement of the posture, and its in-file documentation MUST describe the actual enforced mechanism (it MUST NOT claim a roborev hook written to `.git/hooks/` is "inert because `core.hooksPath` points at `.githooks`", which is false — roborev follows `core.hooksPath`).
+The repository SHALL enforce the explicit-gate review posture such that no automatic code review is enqueued by a commit on any branch. Auto-review is **hook-driven** — a review is enqueued only when an armed `post-commit` hook runs `roborev post-commit`; the daemon does **not** poll the repository (registration in `roborev repo list` is a lazy side effect of that enqueue, so it watches nothing on its own). The committed no-op `.githooks/post-commit` stub is therefore the enforcement: it enqueues nothing. The enforcement SHALL be durable via **tolerate-and-heal**: roborev re-arming the hook — through `install-hook`/`init`, **or as a side effect of `roborev review`/`refine`** — SHALL NOT leave auto-review permanently armed (`scripts/install-hooks.sh` restores the no-op stub on the next `npm install`/setup) and SHALL NOT break the push gate. The committed stub SHALL remain the version-controlled statement of the posture, and its in-file documentation MUST describe the actual enforced mechanism (it MUST NOT claim a roborev hook written to `.git/hooks/` is "inert because `core.hooksPath` points at `.githooks`", which is false — roborev follows `core.hooksPath`).
 
 #### Scenario: committing enqueues no review
 
 - **WHEN** a commit is made on any branch
 - **THEN** no automatic roborev review is enqueued by the commit, whether via a committed/installed `post-commit` hook or via the daemon observing the repository
 
-#### Scenario: posture survives roborev re-arming its hooks
+#### Scenario: a roborev re-arm is tolerated and healed
 
-- **WHEN** roborev later runs `install-hook`/`init` and writes or re-writes a `post-commit` (or `post-rewrite`) hook
-- **THEN** no automatic review is enqueued by subsequent commits, and the re-armed hook does not break the push gate (see "Pushes are gated by checks identical to CI")
+- **WHEN** roborev re-arms the `post-commit` (or `post-rewrite`) hook — via `install-hook`/`init`, or as a side effect of running `roborev review`/`refine`
+- **THEN** the re-armed hook does not break the push gate (see "Pushes are gated by checks identical to CI"), and `scripts/install-hooks.sh` restores the no-op `post-commit` stub on the next `npm install`/setup, so commits enqueue no automatic review once healed
 
 #### Scenario: posture survives the daemon observing the repository
 
@@ -26,7 +26,7 @@ The repository SHALL enforce the explicit-gate review posture such that no autom
 
 ### Requirement: Hooks activate on install
 
-Installing dependencies SHALL activate the repository's committed git hooks so that a fresh checkout is gated after a single `npm install`, and the activation SHALL be resilient to roborev's own hook installation: roborev re-arming its hooks MUST NOT corrupt the tracked, version-controlled hook sources that encode the review posture, nor cause the post-commit hook to enqueue an automatic review.
+Installing dependencies SHALL activate the repository's committed git hooks so that a fresh checkout is gated after a single `npm install`, and the activation SHALL be resilient to roborev's own hook installation via **tolerate-and-heal**. roborev re-arming its hooks (`install-hook`/`init`, or as a side effect of `roborev review`/`refine`) **does** modify the tracked `.githooks/post-commit` source, so the guarantee is not prevention but recovery: `scripts/install-hooks.sh` SHALL restore the no-op `post-commit` stub on the next `npm install`/setup (post-commit only — `post-rewrite`'s `remap` is left intact), and the re-armed hook SHALL NOT break the push gate. A roborev hook installation can thus neither leave auto-review permanently armed nor block an otherwise-clean push.
 
 #### Scenario: postinstall wires hooks
 
@@ -38,10 +38,10 @@ Installing dependencies SHALL activate the repository's committed git hooks so t
 - **WHEN** the install runs where no git work tree is present (e.g. a tarball or CI container without git state)
 - **THEN** hook activation is skipped without error
 
-#### Scenario: roborev hook installation does not corrupt tracked hook sources
+#### Scenario: a roborev hook installation is tolerated and healed
 
-- **WHEN** roborev runs `install-hook`/`init` after hooks are activated
-- **THEN** the tracked `.githooks/post-commit` source is not modified into an auto-review hook, so a `git status` after a roborev hook installation shows no working-tree modification of the tracked hook that would break the push gate
+- **WHEN** roborev runs `install-hook`/`init` (or `roborev review`/`refine` re-installs its hooks) after hooks are activated, modifying the tracked `.githooks/post-commit`
+- **THEN** the re-armed hook does not cause the push gate (`scripts/checks.sh`) to fail, and `scripts/install-hooks.sh` restores the no-op `post-commit` stub on the next `npm install`/setup
 
 ### Requirement: Pushes are gated by checks identical to CI
 
