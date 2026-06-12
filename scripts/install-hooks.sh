@@ -17,13 +17,17 @@ if [ -d .git ] || git rev-parse --git-dir >/dev/null 2>&1; then
   # (roborev's `remap`, wanted at the explicit gates) is intentionally left
   # untouched. The grep guard makes this a no-op when post-commit is already the
   # kernel stub — and thus a no-op on machines without roborev, which never arm it.
-  # NOTE: this self-heals on the next install; an out-of-band `roborev init`
-  # followed by a commit before re-running setup is the one window it cannot close
-  # (enqueue is hook-driven and roborev exposes no config off-switch — see
-  # WORKFLOW-NOTES.md). The push gate stays safe regardless (checks.sh excludes
-  # these paths).
+  # It matches BOTH roborev arming modes: the `--force` full replacement and the
+  # plain `install-hook` prepend (which inserts a `_roborev_hook` function ahead of
+  # the stub); both carry the `roborev post-commit hook` banner, and `_roborev_hook`
+  # is matched too so a future banner-text change still trips the guard.
+  # NOTE: this self-heals on the next install; arming the hook (a `roborev review`/
+  # `refine` gate, or an out-of-band `roborev init`) then committing before setup
+  # re-runs is the one window it cannot close (enqueue is hook-driven and roborev
+  # exposes no config off-switch — see WORKFLOW-NOTES.md). The push gate stays safe
+  # regardless (checks.sh excludes these paths).
   if [ -f .githooks/post-commit ] &&
-    grep -q 'roborev post-commit hook' .githooks/post-commit 2>/dev/null; then
+    grep -Eq 'roborev post-commit hook|_roborev_hook' .githooks/post-commit 2>/dev/null; then
     if git checkout -- .githooks/post-commit 2>/dev/null; then
       echo "[install-hooks] restored no-op post-commit stub (roborev had armed auto-review)" >&2
     fi
