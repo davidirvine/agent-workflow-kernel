@@ -1,8 +1,8 @@
 // The reference instrument's FAUST DSP — a minimal key-triggered A/R sine synth
 // with a waveform selector and attack/release envelope knobs. Kept deliberately
 // tiny so the chassis seam is visible without being drowned in instrument
-// detail. new-app.sh (slice 3) blanks this when emitting a fresh app; the preset
-// keeps it as a worked example.
+// detail. new-app.sh seeds this verbatim into a fresh app as its starting
+// instrument; thereafter it is app-owned content and is never re-synced.
 //
 // Param naming MUST match src/param-schema.js — the chassis routes setParam
 // calls by the schema's keys. WAVEFORMS order is also load-bearing: the
