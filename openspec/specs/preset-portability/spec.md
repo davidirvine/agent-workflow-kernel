@@ -73,7 +73,7 @@ A preset SHALL ship its own `package.json`, build configuration (e.g. `vite.conf
 
 ### Requirement: The reference instrument exercises the chassis seam minimally
 
-A preset SHALL ship a minimal **reference instrument** as a worked example — a single **playable** instrument that exercises both store-backed descriptor kinds (`knob` and `switch`), the chassis power-lifecycle, and the full `freq`/`gate` note lifecycle. The reference instrument SHALL be small enough to read end-to-end yet complete enough that `new-app.sh` (slice 3) can blank it and the chassis still has a meaningful contract to honor.
+A preset SHALL ship a minimal **reference instrument** as a worked example — a single **playable** instrument that exercises both store-backed descriptor kinds (`knob` and `switch`), the chassis power-lifecycle, and the full `freq`/`gate` note lifecycle. The reference instrument SHALL be small enough to read end-to-end yet complete enough that `new-app.sh` seeds a generated app with it as the app's starting instrument and the chassis still has a meaningful contract to honor.
 
 The reference instrument SHALL be **key-triggered**: `gate` SHALL drive an audible amplitude envelope so that pressing a key starts a note and releasing it ends the note. The instrument SHALL be silent when no key is held (including immediately after power-on), rather than sounding a continuous tone independent of `gate`. The specific envelope shape and oscillator are implementation choices for the preset, but `gate` SHALL have an audible note-on/note-off effect on amplitude, not merely select or switch a parameter.
 
@@ -98,12 +98,12 @@ The reference instrument SHALL be **key-triggered**: `gate` SHALL drive an audib
 
 ### Requirement: A preset declares its instrument-tier stub mapping in the sync manifest
 
-Each preset entry in `kernel-manifest.json` SHALL declare an `instrumentStubs` field mapping each instrument-tier target path (relative to the generated app's root) to a committed stub file inside the preset (e.g. `"src/param-schema.js": "stubs/param-schema.js"`). Every stub source SHALL exist; no target path SHALL appear in the preset's `paths` list (a target listed in both `paths` and `instrumentStubs` would mean the generator writes a stub then overwrites it with the preset's reference instrument).
+Each preset entry in `kernel-manifest.json` SHALL declare an `instrumentStubs` field mapping each instrument-tier target path (relative to the generated app's root) to a committed source file inside the preset. For the preset's reference instrument, each source SHALL be the reference instrument file itself, so the target and source paths are equal (e.g. `"src/param-schema.js": "src/param-schema.js"`) and the generator seeds a fresh app with the reference instrument. Every source SHALL exist; no target path SHALL appear in the preset's `paths` list (a target listed in both `paths` and `instrumentStubs` would mean the generator writes the instrument-tier file then overwrites it with a `paths` copy).
 
-#### Scenario: Generator can blank a preset stack-agnostically
+#### Scenario: Generator can seed a preset stack-agnostically
 
 - **WHEN** `new-app.sh` runs against a preset
-- **THEN** it reads each entry under that preset's `instrumentStubs` field and writes the named stub file's content to the target path in the emitted app, with no preset-specific knowledge required in the generator
+- **THEN** it reads each entry under that preset's `instrumentStubs` field and writes the named source file's content — the preset's reference instrument — to the target path in the emitted app, with no preset-specific knowledge required in the generator
 
 #### Scenario: Manifest-validate catches a malformed `instrumentStubs`
 
