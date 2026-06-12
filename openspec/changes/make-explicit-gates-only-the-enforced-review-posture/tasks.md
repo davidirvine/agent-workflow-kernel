@@ -7,7 +7,7 @@
 
 ## 2. Enforce the explicit-gates posture (D2)
 
-- [ ] 2.1 Based on §1, apply the posture mechanism: if (a), neutralize the auto-review hook durably; if (b), apply the daemon-level opt-out / keep-unwatched lever. De-register this repo as a one-time cleanup. **If (b) holds and §1 found no supported daemon opt-out, halt and present findings to the human before proceeding — do not improvise a workaround.**
+- [x] 2.1 Based on §1, apply the posture mechanism: if (a), neutralize the auto-review hook durably; if (b), apply the daemon-level opt-out / keep-unwatched lever. De-register this repo as a one-time cleanup. **If (b) holds and §1 found no supported daemon opt-out, halt and present findings to the human before proceeding — do not improvise a workaround.** _(§1 classified (a) hook-driven, so the durable neutralization lives in `install-hooks.sh` (task 3.2). The one-time `roborev repo delete` was presented to the human and **declined** — the audit showed it does not enforce the posture and would destroy 21 open reviews; registration is harmless once enqueue is neutralized.)_
 - [x] 2.2 Verify a commit on `main` (or a scratch branch) enqueues no automatic review, and that the result survives a subsequent `roborev install-hook`/`init`.
 
 ## 3. Resolve the hook collision so pushes stop failing (D3)
@@ -24,7 +24,7 @@
 
 ## 5. Propagate to generated apps (D6)
 
-- [ ] 5.0 **Decision gate:** get an explicit human decision on whether generated apps ship roborev enabled at the gates, or leave roborev wiring to the consumer. Do not start 5.1 until answered — D6's shape depends on it.
+- [x] 5.0 **Decision gate:** get an explicit human decision on whether generated apps ship roborev enabled at the gates, or leave roborev wiring to the consumer. Do not start 5.1 until answered — D6's shape depends on it. _(Human decision: **keep** roborev wiring in generated apps with the now-fixed explicit-gates posture. D6 = confirm propagation (5.1) + add coverage (5.2); no manifest change to strip roborev.)_
 - [ ] 5.1 Confirm the §2/§3/§4 changes travel correctly through `scripts/new-app.sh` and `scripts/sync-kernel.sh` (manifest/identity handling, app-owned-file rules), adjusting them if any changed file's generation/sync behavior is wrong.
 - [ ] 5.2 Add coverage proving a freshly generated app is not auto-registered and its push gate is not broken by a roborev hook re-arm (an assertion in `generate-assert.sh`/`smoke-app.sh` where feasible, otherwise a documented manual verification step).
 
