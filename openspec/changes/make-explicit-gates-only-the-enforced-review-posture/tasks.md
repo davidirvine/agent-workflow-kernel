@@ -19,7 +19,7 @@
 
 ## 4. Replace the false D2 mechanism and reconcile docs (D4, D5)
 
-- [ ] 4.1 Rewrite the `.githooks/post-commit` stub comment to state the true mechanism (roborev follows `core.hooksPath`; posture enforced via the §2/§3 mechanism, not a non-existent `.git/hooks/` redirect). Run `shfmt -w` + `shellcheck`.
+- [x] 4.1 Rewrite the `.githooks/post-commit` stub comment to state the true mechanism (roborev follows `core.hooksPath`; posture enforced via the §2/§3 mechanism, not a non-existent `.git/hooks/` redirect). Run `shfmt -w` + `shellcheck`.
 - [ ] 4.2 Update the `.roborev.toml` posture comment, `CLAUDE.md` (Code-review section), and `WORKFLOW-NOTES.md` so all four artifacts agree on the enforced posture with no contradiction. Run `prettier --write` on changed `*.md`/`*.toml`.
 
 ## 5. Propagate to generated apps (D6)
