@@ -46,7 +46,7 @@ Do not implement changes directly on `main`. If you find yourself on `main` with
 
 ## Code review with roborev
 
-This repo uses roborev for code review. Reviews are invoked **explicitly** at the defined gates — the proposal design review on the `proposal/<change-name>` branch (`/roborev-design-review-branch`), the end-of-implementation `roborev refine`, and ad-hoc `roborev review` / `roborev tui` — not automatically after every commit. Commits on `feature/`/`bugfix/` worktree branches are not auto-queued (the `post-commit` hook is a stub and `core.hooksPath` is shared across worktrees), so do not rely on a review firing on its own; invoke one explicitly when you need it.
+This repo uses roborev for code review. Reviews are invoked **explicitly** at the defined gates — the proposal design review on the `proposal/<change-name>` branch (`/roborev-design-review-branch`), the end-of-implementation `roborev refine`, and ad-hoc `roborev review` / `roborev tui` — not automatically after every commit. Auto-review is hook-driven (not a daemon poll), and the committed `.githooks/post-commit` is a no-op stub that enqueues nothing, so commits — including on `feature/`/`bugfix/` worktree branches — are not auto-reviewed; the gate commands above never arm the hook. roborev's `install-hook`/`init` _would_ re-arm it, but `scripts/install-hooks.sh` restores the stub on each setup and `scripts/checks.sh` keeps the push gate safe regardless (see `WORKFLOW-NOTES.md`). Do not rely on a review firing on its own; invoke one explicitly when you need it.
 
 - Browse open reviews interactively with `roborev tui`, or list them with `roborev fix --open --list`
 - To address open findings, use the `/roborev-fix` skill
