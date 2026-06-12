@@ -6,7 +6,7 @@ tier: kernel
 
 ## Purpose
 
-Defines the kernel-tier contract that `scripts/new-app.sh` honors when emitting a fresh app from this kernel plus a chosen preset: a self-contained, identity-clean app directory with the chassis in place, the instrument blanked from committed stubs, donor identity substituted to the new app's name, package version reset to `0.1.0`, an empty `openspec/changes/`, and `git init` run. The contract is gated by a committed `scripts/generate-assert.sh` that ships with the kernel and to consumers, so the same structural check runs in CI and downstream.
+Defines the kernel-tier contract that `scripts/new-app.sh` honors when emitting a fresh app from this kernel plus a chosen preset: a self-contained, identity-clean app directory with the chassis in place, the instrument seeded from the preset's committed reference instrument, donor identity substituted to the new app's name, package version reset to `0.1.0`, an empty `openspec/changes/`, and `git init` run. The contract is gated by a committed `scripts/generate-assert.sh` that ships with the kernel and to consumers, so the same structural check runs in CI and downstream.
 
 ## Requirements
 
