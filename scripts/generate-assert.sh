@@ -116,6 +116,32 @@ while IFS=$'\t' read -r target _source; do
   [ -z "$target" ] && continue
   [ -e "$APP/$target" ] || note "missing instrumentStubs target: $target"
 done < <(manifest_preset_instrument_stubs "$PRESET_KEY")
+
+# instrumentStubs CONTENT: the emitted instrument is the preset's REFERENCE,
+# not a blank (change: seed-reference-instrument). Structural, not keyed to
+# specific reference param names, so the gate survives a future
+# reference-instrument swap (e.g. a filter synth with cutoff/resonance): the
+# emitted schema must declare at least one `knob` descriptor (so PARAM_NAMES /
+# KNOB_PARAMS are non-empty), and the DSP must not be the old silent
+# `process = silence` stub. grep-based — matching how the rest of this script
+# inspects emitted files — to avoid `node --input-type=module` portability
+# caveats. `kind: 'knob'` matches only a real descriptor entry, not the JSDoc
+# `'knob' | 'switch'` union or the `d.kind === 'knob'` filter (both use no
+# `kind:` colon). The current reference's attack/release knobs are an
+# illustrative example, not the load-bearing match.
+SCHEMA_FILE="$APP/src/param-schema.js"
+if [ ! -f "$SCHEMA_FILE" ]; then
+  note "emitted src/param-schema.js missing (cannot assert reference instrument)"
+elif ! grep -Eq "kind:[[:space:]]*'knob'" "$SCHEMA_FILE"; then
+  note "emitted src/param-schema.js declares no 'knob' descriptor — looks blanked, not seeded with the reference instrument"
+fi
+DSP_FILE="$APP/faust/synth.dsp"
+if [ ! -f "$DSP_FILE" ]; then
+  note "emitted faust/synth.dsp missing (cannot assert reference instrument)"
+elif grep -Eq "^[[:space:]]*process[[:space:]]*=[[:space:]]*silence([[:space:];]|$)" "$DSP_FILE"; then
+  note "emitted faust/synth.dsp is the silent 'process = silence' stub — expected the reference instrument's DSP"
+fi
+
 while IFS=$'\t' read -r target _source; do
   [ -z "$target" ] && continue
   [ -e "$APP/$target" ] || note "missing appTemplates target: $target"
