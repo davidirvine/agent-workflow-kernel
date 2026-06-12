@@ -8,8 +8,9 @@
 //
 // The schema is deliberately tiny — three store-backed params (attack, release,
 // waveform) plus the modWheel controller — so the chassis seam is visible
-// without being drowned in instrument detail. new-app.sh (slice 3) blanks this
-// when emitting a fresh app; the preset keeps it as a worked example.
+// without being drowned in instrument detail. new-app.sh seeds this verbatim
+// into a fresh app as its starting instrument; thereafter it is app-owned
+// content and is never re-synced.
 
 /**
  * A single parameter descriptor — see the chassis-architecture spec for the
