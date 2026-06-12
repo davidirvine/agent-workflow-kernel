@@ -93,9 +93,9 @@
         "presets/svelte-faust-synth/src/state/synth.test.js"
       ],
       "instrumentStubs": {
-        "src/param-schema.js": "stubs/param-schema.js",
-        "src/components/InstrumentPanels.svelte": "stubs/InstrumentPanels.svelte",
-        "faust/synth.dsp": "stubs/synth.dsp"
+        "src/param-schema.js": "src/param-schema.js",
+        "src/components/InstrumentPanels.svelte": "src/components/InstrumentPanels.svelte",
+        "faust/synth.dsp": "faust/synth.dsp"
       },
       "appTemplates": {
         ".github/workflows/ci.yml": "templates/app-ci.yml",
