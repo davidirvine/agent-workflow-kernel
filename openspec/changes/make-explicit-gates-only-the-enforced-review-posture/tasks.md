@@ -8,7 +8,7 @@
 ## 2. Enforce the explicit-gates posture (D2)
 
 - [ ] 2.1 Based on §1, apply the posture mechanism: if (a), neutralize the auto-review hook durably; if (b), apply the daemon-level opt-out / keep-unwatched lever. De-register this repo as a one-time cleanup. **If (b) holds and §1 found no supported daemon opt-out, halt and present findings to the human before proceeding — do not improvise a workaround.**
-- [ ] 2.2 Verify a commit on `main` (or a scratch branch) enqueues no automatic review, and that the result survives a subsequent `roborev install-hook`/`init`.
+- [x] 2.2 Verify a commit on `main` (or a scratch branch) enqueues no automatic review, and that the result survives a subsequent `roborev install-hook`/`init`.
 
 ## 3. Resolve the hook collision so pushes stop failing (D3)
 
