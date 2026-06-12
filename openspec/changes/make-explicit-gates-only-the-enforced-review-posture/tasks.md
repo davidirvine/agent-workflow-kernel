@@ -30,5 +30,5 @@
 
 ## 6. Completion gate
 
-- [ ] 6.1 Run `scripts/checks.sh` (and the STACK.md completion-gate commands touched by this change: `shellcheck scripts/*.sh`, `generate-assert.sh`, `smoke-app.sh` as applicable) and confirm all pass.
+- [x] 6.1 Run `scripts/checks.sh` (and the STACK.md completion-gate commands touched by this change: `shellcheck scripts/*.sh`, `generate-assert.sh`, `smoke-app.sh` as applicable) and confirm all pass. _(All green: `checks.sh` ✓, `shellcheck -x scripts/*.sh` ✓, `generate-assert.sh` ✓ (incl. new posture asserts), `smoke-app.sh` ✓ (generated app's npm install ran the modified install-hooks.sh postinstall cleanly), plus `check-manifest.sh` and `check-identity-leak.sh` ✓.)_
 - [ ] 6.2 Run `/opsx:verify` for this change and confirm the implementation matches proposal/design/specs/tasks.
